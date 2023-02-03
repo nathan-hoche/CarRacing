@@ -20,18 +20,37 @@ class brain:
         self.model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
 
         self.model.add(Flatten())
-        self.model.add(Dense(30, activation='relu', name='dense1'))
-        self.model.add(Dense(20, activation='relu', name='dense2'))
+        self.model.add(Dense(30, activation='sigmoid', name='dense1'))
+        self.model.add(Dense(20, activation='sigmoid', name='dense2'))
         self.model.add(Dense(3, activation='sigmoid', name='dense3'))
 
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         self.model.summary()
+
+        
     
     def predict(self, observation):
         return self.model.predict(clearObservation(observation))
     
     def getWeights(self, name, bias=False):
         return self.model.get_layer(name).get_weights()[bias]
+    
+    def getAllWeights(self):
+        res = {}
+
+        res["dense1"] = {}
+        res["dense1"]["weight"] = self.getWeights("dense1")
+        res["dense1"]["bias"] = self.getWeights("dense1", bias=True)
+
+        res["dense2"] = {}
+        res["dense2"]["weight"] = self.getWeights("dense2")
+        res["dense2"]["bias"] = self.getWeights("dense2", bias=True)
+
+        res["dense3"] = {}
+        res["dense3"]["weight"] = self.getWeights("dense3")
+        res["dense3"]["bias"] = self.getWeights("dense3", bias=True)
+        return res
+
 
     def train(self, wd1=None, wd2=None, wd3=None):
         if wd1 is not None:

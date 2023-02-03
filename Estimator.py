@@ -1,0 +1,60 @@
+import numpy as np
+import json
+
+############# UPDATE FUNC #############
+
+def randomUpdate(narray):
+    return narray + np.random.uniform(-0.1, 0.1, narray.shape)
+
+def randomChoiceWeights(narray):
+    return np.random.choice(narray.reshape(narray.size), narray.size).reshape(narray.shape)
+
+def fullRandomWeights(narray):
+    return np.random.uniform(-1, 1, narray.size).reshape(narray.shape)
+
+
+############# UTILS ############# 
+
+def convertToNumpy(arr):
+    score = arr.pop("score")
+    for x in arr.keys():
+        for y in arr[x].keys():
+            arr[x][y] = np.array(arr[x][y])
+    return arr, score
+
+def loopAll(weights: dict, func) -> dict:
+    res = {}
+    
+    for x in weights.keys():
+        res[x] = {}
+        for y in weights[x].keys():
+            res[x][y] = func(weights[x][y])
+    return res
+
+############# CLASS ############# 
+
+class estimator:
+    def __init__(self) -> None:
+        with open("save.json", 'r') as fd:
+            self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))
+        pass
+
+    def saveBestWeights(self):
+        res = {"score": self.bestScore}
+
+        for x in self.bestWeights.keys():
+            res[x] = {}
+            for y in self.bestWeights[x].keys():
+                res[x][y] = self.bestWeights[x][y].tolist()
+        save = open("save.json", "w")
+        json.dump(res, save, indent=4)
+
+    def getBestCase(self):
+        return self.bestWeights
+
+    def update(self, weights:dict, score):
+        if score > self.bestScore:
+            self.bestScore = score
+            self.bestWeights = weights
+            self.saveBestWeights()
+        return loopAll(self.bestWeights, randomUpdate)
