@@ -1,25 +1,71 @@
 import gym
-from Brain import brain
-from Estimator import estimator
+import sys
+import os
+import importlib
 
-ENV = gym.make("CarRacing-v2", render_mode="human")
+ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 
 # Actions: [steering, gas, brake] [{-1 ... 1}, {0 ... 1}, {0 ... 1}]
 # Observaton space: [[r, g, b] * 94] * 94] (RGB image)
 
-ESTIMATOR = estimator()
-BRAIN = brain()
 PENALITY = 0.10
-
 
 def formatWeights(weights:dict) -> list:
     return [weights["weight"], weights["bias"]]
 
-save = ESTIMATOR.getBestCase()
-BRAIN.train(wd1=formatWeights(save["dense1"]), wd2=formatWeights(save["dense2"]), wd3=formatWeights(save["dense3"]))
+
+def loadBrain(newtorkFile: str, estimatorFile) -> object:
+    """
+    Load an network from a file
+    """
+    try:
+        sys.path.append(os.getcwd() + "/networks/")
+        networkFd = importlib.import_module(newtorkFile.replace(".py", ""))
+        print("Load : ", newtorkFile, "found.")
+    except Exception as e:
+        print("ERROR: File", newtorkFile, "not found.")
+        print(e)
+        exit(0)
+    try:
+        networkClassFd = networkFd.brain()
+        print("Load: Class found. -> ", type(networkClassFd))
+        ####### Check if sample fonction is set
+        networkClassFd.train(check=True)
+        networkClassFd.predict(check=True)
+        #######################################
+    except Exception as e:
+        print("ERROR: class/method crashed")
+        print(e)
+        exit(0)
+
+    """
+    Load an estimator from a file
+    """
+    try:
+        sys.path.append(os.getcwd() + "/estimators/")
+        estimatorFd = importlib.import_module(estimatorFile.replace(".py", ""))
+        print("Load : ", estimatorFile, "found.")
+    except Exception as e:
+        print("ERROR: File", estimatorFile, "not found.")
+        print(e)
+        exit(0)
+    try:
+        estimatorClassFd = estimatorFd.estimator(networkClassFd.__str__())
+        print("Load: Class found. -> ", type(estimatorClassFd))
+        ####### Check if sample fonction is set
+        estimatorClassFd.update(check=True)
+        estimatorClassFd.getBestCase(check=True)
+        #######################################
+    except Exception as e:
+        print("ERROR: class/method crashed")
+        print(e)
+        exit(0)
+    return networkClassFd, estimatorClassFd
 
 def main():
-    for _ in range(100): # Nombre de simulations
+    BRAIN, ESTIMATOR = loadBrain("CNN.py", "Custom.py")
+    print("config: ", ESTIMATOR, BRAIN)
+    for _ in range(100): # Number of simulations
 
         observation, info = ENV.reset()
         score = 0
@@ -30,7 +76,8 @@ def main():
             step[0] = step[0] * 2 - 1
             step[1] = 1
             step[2] = 0
-            print("Move:", step, end=" \t")
+            # print("Move ", "\t".join(["{}{:0.2f}".format(("+" if x >= 0 else ""),x) for x in step]), end=" \t")
+            print("Move:", "{}{:0.2f}".format(("+" if step[0] >= 0 else ""),step[0]), step[1], step[2], sep="\t", end=" \t")
 
             observation, reward, terminated, truncated, info = ENV.step(step)
 
@@ -44,7 +91,7 @@ def main():
         print("=====================================> END OF SIMULATION")
         print("Max score:", Max_score)
         newWeight = ESTIMATOR.update(BRAIN.getAllWeights(), Max_score)
-        
+
         step = BRAIN.train(wd1=formatWeights(newWeight["dense1"]), wd2=formatWeights(newWeight["dense2"]), wd3=formatWeights(newWeight["dense3"]))
 
 main()
