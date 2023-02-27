@@ -44,8 +44,8 @@ def main():
         print("=====================================> END OF SIMULATION")
         print("Max score:", Max_score)
         newWeight = ESTIMATOR.update(BRAIN.getAllWeights(), Max_score)
-        
         step = BRAIN.train(wd1=formatWeights(newWeight["dense1"]), wd2=formatWeights(newWeight["dense2"]), wd3=formatWeights(newWeight["dense3"]))
 
-main()
-ENV.close()
+if __name__ == "__main__":
+    main()
+    ENV.close()
