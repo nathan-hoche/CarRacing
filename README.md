@@ -9,5 +9,3 @@
 # Q-Learning
 
 # Deep Q Neural Network (DQN)
-
-:)
