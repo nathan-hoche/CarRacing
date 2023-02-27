@@ -1,5 +1,7 @@
 # To synchronize both GitHub and Kent GitLab repositories
 
+## Don't forget to set your ssh key in the Gitlab settings !!!.
+
 ## Create a new remote called "all" with the URL of the primary repo.
 git remote add all git@github.com:nathan-hoche/CarRacing.git
 ## Re-register the remote as a push URL.
