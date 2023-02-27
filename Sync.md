@@ -14,4 +14,4 @@ git push all main
 
 ## Pull from both remotes.
 ### You cannot pull from two remotes so you only pull from the primary repo.
-git pull
+git pull origin main
