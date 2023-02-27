@@ -13,7 +13,6 @@ PENALITY = 0.10
 def formatWeights(weights:dict) -> list:
     return [weights["weight"], weights["bias"]]
 
-
 def loadBrain(newtorkFile: str, estimatorFile) -> object:
     """
     Load an network from a file
@@ -62,8 +61,8 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
         exit(0)
     return networkClassFd, estimatorClassFd
 
-def main():
-    BRAIN, ESTIMATOR = loadBrain("CNN.py", "Custom.py")
+def main(brain, estimator):
+    BRAIN, ESTIMATOR = loadBrain(brain, estimator)
     print("config: ", ESTIMATOR, BRAIN)
     for _ in range(100): # Number of simulations
 
@@ -94,5 +93,17 @@ def main():
         step = BRAIN.train(wd1=formatWeights(newWeight["dense1"]), wd2=formatWeights(newWeight["dense2"]), wd3=formatWeights(newWeight["dense3"]))
 
 if __name__ == "__main__":
-    main()
+    sys.argv.pop(0)
+    if len(sys.argv) == 2:
+        main(sys.argv[0], sys.argv[1])
+    else:
+        Bdir =  os.listdir(os.getcwd() + "/networks/")
+        Bdir = [x.replace(".py", "") for x in Bdir if x.endswith(".py")]
+        Edir =  os.listdir(os.getcwd() + "/estimators/")
+        Edir = [x.replace(".py", "") for x in Edir if x.endswith(".py")]
+        print("ERROR: Invalid number of arguments")
+        print("USAGE: python3 carRacing.py Brain Estimator")
+        print("EXAMPLE: python3 carRacing.py CNN Custom")
+        print("List of Brain:\n\t-", "\n\t- ".join(Bdir))
+        print("List of Estimator:\n\t-", "\n\t- ".join(Edir))
     ENV.close()
