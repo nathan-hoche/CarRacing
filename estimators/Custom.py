@@ -13,7 +13,7 @@ def fullRandomWeights(narray):
     return np.random.uniform(-1, 1, narray.size).reshape(narray.shape)
 
 
-############# UTILS ############# 
+############# UTILS #############
 
 def convertToNumpy(arr):
     score = arr.pop("score")
@@ -24,20 +24,26 @@ def convertToNumpy(arr):
 
 def loopAll(weights: dict, func) -> dict:
     res = {}
-    
+
     for x in weights.keys():
         res[x] = {}
         for y in weights[x].keys():
             res[x][y] = func(weights[x][y])
     return res
 
-############# CLASS ############# 
+############# CLASS #############
 
 class estimator:
-    def __init__(self) -> None:
-        with open("save.json", 'r') as fd:
-            self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))
-        pass
+    def __init__(self, networkName) -> None:
+        self.networkName = networkName
+        try:
+            with open("saves/" + self.networkName + ".json" , 'r') as fd:
+                self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))
+        except:
+            self.bestWeights, self.bestScore = None, -1
+
+    def __str__(self) -> str:
+        return "Custom"
 
     def saveBestWeights(self):
         res = {"score": self.bestScore}
@@ -46,13 +52,17 @@ class estimator:
             res[x] = {}
             for y in self.bestWeights[x].keys():
                 res[x][y] = self.bestWeights[x][y].tolist()
-        save = open("save.json", "w")
+        save = open("saves/" + self.networkName + ".json", "w")
         json.dump(res, save, indent=4)
 
-    def getBestCase(self):
+    def getBestCase(self, check=False):
+        if check:
+            return
         return self.bestWeights
 
-    def update(self, weights:dict, score):
+    def update(self, weights:dict = None, score = None, check=False):
+        if check:
+            return
         if score > self.bestScore:
             self.bestScore = score
             self.bestWeights = weights

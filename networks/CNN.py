@@ -7,7 +7,7 @@ def clearObservation(observation):
     for x in range(0, 94):
         for y in range(0, 94):
             obs[x][y] = observation[x][y].mean()
-    
+
     return obs.reshape(1, 1, 94, 94)
 
 class brain:
@@ -27,14 +27,17 @@ class brain:
         self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         self.model.summary()
 
-        
-    
-    def predict(self, observation):
-        return self.model.predict(clearObservation(observation))
-    
+    def __str__(self) -> str:
+        return "CNN"
+
+    def predict(self, observation = None, check=False):
+        if check:
+            return;
+        return self.model.predict(clearObservation(observation), verbose=False)
+
     def getWeights(self, name, bias=False):
         return self.model.get_layer(name).get_weights()[bias]
-    
+
     def getAllWeights(self):
         res = {}
 
@@ -52,7 +55,9 @@ class brain:
         return res
 
 
-    def train(self, wd1=None, wd2=None, wd3=None):
+    def train(self, wd1=None, wd2=None, wd3=None, check=False):
+        if check:
+            return;
         if wd1 is not None:
             self.model.get_layer("dense1").set_weights(wd1)
         if wd2 is not None:
