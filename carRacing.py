@@ -15,30 +15,7 @@ def formatWeights(weights:dict) -> list:
 
 def loadBrain(newtorkFile: str, estimatorFile) -> object:
     """
-    Load an network from a file
-    """
-    try:
-        sys.path.append(os.getcwd() + "/networks/")
-        networkFd = importlib.import_module(newtorkFile.replace(".py", ""))
-        print("Load : ", newtorkFile, "found.")
-    except Exception as e:
-        print("ERROR: File", newtorkFile, "not found.")
-        print(e)
-        exit(0)
-    try:
-        networkClassFd = networkFd.brain()
-        print("Load: Class found. -> ", type(networkClassFd))
-        ####### Check if sample fonction is set
-        networkClassFd.train(check=True)
-        networkClassFd.predict(check=True)
-        #######################################
-    except Exception as e:
-        print("ERROR: class/method crashed")
-        print(e)
-        exit(0)
-
-    """
-    Load an estimator from a file
+    Load an network and an estimator from a file
     """
     try:
         sys.path.append(os.getcwd() + "/estimators/")
@@ -49,12 +26,30 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
         print(e)
         exit(0)
     try:
-        estimatorClassFd = estimatorFd.estimator(networkClassFd.__str__())
+        estimatorClassFd = estimatorFd.estimator()
         print("Load: Class found. -> ", type(estimatorClassFd))
         ####### Check if sample fonction is set
         estimatorClassFd.update(check=True)
-        estimatorClassFd.getBestCase(check=True)
         estimatorClassFd.memorize(check=True)
+        #######################################
+    except Exception as e:
+        print("ERROR: class/method crashed")
+        print(e)
+        exit(0)
+    try:
+        sys.path.append(os.getcwd() + "/networks/")
+        networkFd = importlib.import_module(newtorkFile.replace(".py", ""))
+        print("Load : ", newtorkFile, "found.")
+    except Exception as e:
+        print("ERROR: File", newtorkFile, "not found.")
+        print(e)
+        exit(0)
+    try:
+        networkClassFd = networkFd.brain(estimatorClassFd.__str__())
+        print("Load: Class found. -> ", type(networkClassFd))
+        ####### Check if sample fonction is set
+        networkClassFd.train(check=True)
+        networkClassFd.predict(check=True)
         #######################################
     except Exception as e:
         print("ERROR: class/method crashed")
@@ -64,7 +59,7 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
 
 def main(brain, estimator):
     BRAIN, ESTIMATOR = loadBrain(brain, estimator)
-    print("config: ", ESTIMATOR, BRAIN)
+    print("config: ", BRAIN, ESTIMATOR)
     for _ in range(100): # Number of simulations
 
         observation, info = ENV.reset()
@@ -77,7 +72,7 @@ def main(brain, estimator):
             step[1] = 1
             step[2] = 0
 
-            print("Move:", "{}{:0.2f}".format(("+" if step[0] >= 0 else ""),step[0]), step[1], step[2], sep="\t", end=" \t")
+            print("Move:", "{}{:0.2f}".format(("+" if step[0] >= 0 else ""), step[0]), step[1], step[2], sep="\t", end=" \t")
 
             nextObservation, reward, terminated, truncated, info = ENV.step(step)
             ESTIMATOR.memorize(observation, step, reward, nextObservation)

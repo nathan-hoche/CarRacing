@@ -34,32 +34,12 @@ def loopAll(weights: dict, func) -> dict:
 ############# CLASS #############
 
 class estimator:
-    def __init__(self, networkName) -> None:
-        self.networkName = networkName
+    def __init__(self) -> None:
         self.name = "Custom"
-        try:
-            with open("saves/" + self.networkName + "_" + self.name + ".json" , 'r') as fd:
-                self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))
-        except:
-            self.bestWeights, self.bestScore = None, -1
+        self.bestWeights, self.bestScore = None, -1
 
     def __str__(self) -> str:
         return self.name
-
-    def saveBestWeights(self):
-        res = {"score": self.bestScore}
-
-        for x in self.bestWeights.keys():
-            res[x] = {}
-            for y in self.bestWeights[x].keys():
-                res[x][y] = self.bestWeights[x][y].tolist()
-        save = open("saves/" + self.networkName + "_" + self.name + ".json", "w")
-        json.dump(res, save, indent=4)
-
-    def getBestCase(self, check=False):
-        if check:
-            return
-        return self.bestWeights
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
@@ -73,5 +53,5 @@ class estimator:
         if score > self.bestScore:
             self.bestScore = score
             self.bestWeights = weights
-            self.saveBestWeights()
+            brain.save(score)
         return loopAll(self.bestWeights, randomUpdate)

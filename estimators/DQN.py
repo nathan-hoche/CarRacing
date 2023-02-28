@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import json
 import sys
 
 ############# UPDATE FUNC #############
@@ -32,6 +31,9 @@ def dqnUpdate(model, memory:list[dict]):
 
 ############# UTILS #############
 
+def formatWeights(weights:dict) -> list:
+    return [weights["weight"], weights["bias"]]
+
 def convertToNumpy(arr):
     score = arr.pop("score")
     for x in arr.keys():
@@ -42,33 +44,13 @@ def convertToNumpy(arr):
 ############# CLASS #############
 
 class estimator:
-    def __init__(self, networkName) -> None:
-        self.networkName = networkName
+    def __init__(self) -> None:
         self.name = "DQN"
-        try:
-            with open("saves/" + self.networkName + "_" + self.name + ".json" , 'r') as fd:
-                self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))
-        except:
-            self.bestWeights, self.bestScore = None, -1
+        self.bestWeights, self.bestScore = None, -1
         self.memory = []
 
     def __str__(self) -> str:
         return self.name
-
-    def saveBestWeights(self):
-        res = {"score": self.bestScore}
-
-        for x in self.bestWeights.keys():
-            res[x] = {}
-            for y in self.bestWeights[x].keys():
-                res[x][y] = self.bestWeights[x][y].tolist()
-        save = open("saves/" + self.networkName + "_" + self.name + ".json", "w")
-        json.dump(res, save, indent=4)
-
-    def getBestCase(self, check=False):
-        if check:
-            return
-        return self.bestWeights
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
@@ -82,5 +64,7 @@ class estimator:
         if score > self.bestScore:
             self.bestScore = score
             self.bestWeights = weights
-            self.saveBestWeights()
+            brain.save(score)
+        else:
+            brain.train(wd1=formatWeights(self.bestWeights["dense1"]), wd2=formatWeights(self.bestWeights["dense2"]), wd3=formatWeights(self.bestWeights["dense3"]))
         return dqnUpdate(brain.model, self.memory)

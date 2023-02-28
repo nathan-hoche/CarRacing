@@ -1,5 +1,7 @@
 from keras import Sequential
 from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D
+from keras.models import load_model
+from keras.optimizers import Adam
 import numpy as np
 
 def clearObservation(observation):
@@ -11,24 +13,34 @@ def clearObservation(observation):
     return obs.reshape(1, 1, 94, 94)
 
 class brain:
-    def __init__(self) -> None:
-        self.model = Sequential()
-        self.model.add(Conv2D(20, kernel_size=5, padding='same', input_shape=(1, 94, 94), activation='relu'))
-        self.model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
+    def __init__(self, EstimatorName) -> None:
+        self.name = "CNN"
+        self.saveName = "saves/" + self.name + '_' + EstimatorName + '.h5'
+        try:
+            self.model = load_model(self.saveName)
+            print("\n======> LOAD MODEL\n")
+        except:
+            print("\n======> CREATE NEW MODEL\n")
+            self.model = Sequential()
+            self.model.add(Conv2D(32, kernel_size=8, padding='same', input_shape=(1, 94, 94), activation='relu'))
+            self.model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
 
-        self.model.add(Conv2D(5, kernel_size=5, padding='same', activation='relu'))
-        self.model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
+            self.model.add(Conv2D(64, kernel_size=5, padding='same', activation='relu'))
+            self.model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
 
-        self.model.add(Flatten())
-        self.model.add(Dense(30, activation='sigmoid', name='dense1'))
-        self.model.add(Dense(20, activation='sigmoid', name='dense2'))
-        self.model.add(Dense(3, activation='sigmoid', name='dense3'))
+            self.model.add(Flatten())
+            self.model.add(Dense(128, activation='sigmoid', name='dense1'))
+            self.model.add(Dense(32, activation='sigmoid', name='dense2'))
+            self.model.add(Dense(3, activation='sigmoid', name='dense3'))
 
-        self.model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
+            self.model.compile(loss='mse', optimizer=Adam(learning_rate=0.01), metrics=['accuracy'])
         self.model.summary()
 
     def __str__(self) -> str:
-        return "CNN"
+        return self.name
+
+    def save(self, score):
+        self.model.save(self.saveName)
 
     def predict(self, observation = None, check=False):
         if check:
@@ -57,7 +69,7 @@ class brain:
 
     def train(self, wd1=None, wd2=None, wd3=None, check=False):
         if check:
-            return;
+            return
         if wd1 is not None:
             self.model.get_layer("dense1").set_weights(wd1)
         if wd2 is not None:
