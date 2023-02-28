@@ -24,7 +24,7 @@ class brain:
         self.model.add(Dense(20, activation='sigmoid', name='dense2'))
         self.model.add(Dense(3, activation='sigmoid', name='dense3'))
 
-        self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        self.model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
         self.model.summary()
 
     def __str__(self) -> str:

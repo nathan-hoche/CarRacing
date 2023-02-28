@@ -92,8 +92,9 @@ def main(brain, estimator):
 
         print("=====================================> END OF SIMULATION")
         print("Max score:", Max_score)
-        newWeight = ESTIMATOR.update(BRAIN.getAllWeights(), Max_score)
-        step = BRAIN.train(wd1=formatWeights(newWeight["dense1"]), wd2=formatWeights(newWeight["dense2"]), wd3=formatWeights(newWeight["dense3"]))
+        newWeight = ESTIMATOR.update(BRAIN, Max_score)
+        if newWeight != None:
+            BRAIN.train(wd1=formatWeights(newWeight["dense1"]), wd2=formatWeights(newWeight["dense2"]), wd3=formatWeights(newWeight["dense3"]))
 
 if __name__ == "__main__":
     sys.argv.pop(0)

@@ -1,11 +1,34 @@
 import numpy as np
+import random
 import json
+import sys
 
 ############# UPDATE FUNC #############
 
-def dqnUpdate(narray):
-    
-    return narray
+def clearObservation(observation):
+    obs = np.zeros((94, 94))
+    for x in range(0, 94):
+        for y in range(0, 94):
+            obs[x][y] = observation[x][y].mean()
+
+    return obs.reshape(1, 1, 94, 94)
+
+def dqnUpdate(model, memory:list[dict]):
+    batch_size = 32
+    gamma = 0.95
+
+    sys.stdout.write("[%s]" % (" " * batch_size))
+    sys.stdout.flush()
+    sys.stdout.write("\b" * (batch_size+1))
+
+    minibatch = random.sample(memory, batch_size)
+    for state, _, reward, next_state in minibatch:
+        target = reward + gamma * np.array(model.predict(clearObservation(next_state), verbose=False))
+        model.fit(clearObservation(state), target, epochs=1, verbose=False)
+        sys.stdout.write("-")
+        sys.stdout.flush()
+    sys.stdout.write("]\n")
+    return None
 
 ############# UTILS #############
 
@@ -15,15 +38,6 @@ def convertToNumpy(arr):
         for y in arr[x].keys():
             arr[x][y] = np.array(arr[x][y])
     return arr, score
-
-def loopAll(weights: dict, func) -> dict:
-    res = {}
-
-    for x in weights.keys():
-        res[x] = {}
-        for y in weights[x].keys():
-            res[x][y] = func(weights[x][y])
-    return res
 
 ############# CLASS #############
 
@@ -59,13 +73,14 @@ class estimator:
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
             return
-        self.memory.append({"observation": observation, "step": step, "reward": reward, "nextObservation": nextObservation})
+        self.memory.append((observation, step, reward, nextObservation))
 
-    def update(self, weights:dict = None, score = None, check=False):
+    def update(self, brain:object=None, score=None, check=False):
         if check:
             return
+        weights = brain.getAllWeights()
         if score > self.bestScore:
             self.bestScore = score
             self.bestWeights = weights
             self.saveBestWeights()
-        return loopAll(self.bestWeights, dqnUpdate)
+        return dqnUpdate(brain.model, self.memory)

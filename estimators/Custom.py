@@ -66,9 +66,10 @@ class estimator:
             return
         pass
 
-    def update(self, weights:dict = None, score = None, check=False):
+    def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
+        weights = brain.getAllWeights()
         if score > self.bestScore:
             self.bestScore = score
             self.bestWeights = weights
