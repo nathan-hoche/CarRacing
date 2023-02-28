@@ -61,6 +61,11 @@ class estimator:
             return
         return self.bestWeights
 
+    def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
+        if check:
+            return
+        pass
+
     def update(self, weights:dict = None, score = None, check=False):
         if check:
             return

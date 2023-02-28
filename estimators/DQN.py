@@ -3,8 +3,9 @@ import json
 
 ############# UPDATE FUNC #############
 
-def randomUpdate(narray):
-    return narray + np.random.uniform(-0.1, 0.1, narray.shape)
+def dqnUpdate(narray):
+    
+    return narray
 
 ############# UTILS #############
 
@@ -35,6 +36,7 @@ class estimator:
                 self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))
         except:
             self.bestWeights, self.bestScore = None, -1
+        self.memory = []
 
     def __str__(self) -> str:
         return self.name
@@ -54,6 +56,11 @@ class estimator:
             return
         return self.bestWeights
 
+    def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
+        if check:
+            return
+        self.memory.append({"observation": observation, "step": step, "reward": reward, "nextObservation": nextObservation})
+
     def update(self, weights:dict = None, score = None, check=False):
         if check:
             return
@@ -61,4 +68,4 @@ class estimator:
             self.bestScore = score
             self.bestWeights = weights
             self.saveBestWeights()
-        return loopAll(self.bestWeights, randomUpdate)
+        return loopAll(self.bestWeights, dqnUpdate)

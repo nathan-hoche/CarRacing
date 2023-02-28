@@ -54,6 +54,7 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
         ####### Check if sample fonction is set
         estimatorClassFd.update(check=True)
         estimatorClassFd.getBestCase(check=True)
+        estimatorClassFd.memorize(check=True)
         #######################################
     except Exception as e:
         print("ERROR: class/method crashed")
@@ -78,8 +79,10 @@ def main(brain, estimator):
 
             print("Move:", "{}{:0.2f}".format(("+" if step[0] >= 0 else ""),step[0]), step[1], step[2], sep="\t", end=" \t")
 
-            observation, reward, terminated, truncated, info = ENV.step(step)
+            nextObservation, reward, terminated, truncated, info = ENV.step(step)
+            ESTIMATOR.memorize(observation, step, reward, nextObservation)
 
+            observation = nextObservation
             if terminated or truncated:
                 break
             score += reward - PENALITY
