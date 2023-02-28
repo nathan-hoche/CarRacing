@@ -6,13 +6,6 @@ import json
 def randomUpdate(narray):
     return narray + np.random.uniform(-0.1, 0.1, narray.shape)
 
-def randomChoiceWeights(narray):
-    return np.random.choice(narray.reshape(narray.size), narray.size).reshape(narray.shape)
-
-def fullRandomWeights(narray):
-    return np.random.uniform(-1, 1, narray.size).reshape(narray.shape)
-
-
 ############# UTILS #############
 
 def convertToNumpy(arr):
@@ -36,7 +29,7 @@ def loopAll(weights: dict, func) -> dict:
 class estimator:
     def __init__(self, networkName) -> None:
         self.networkName = networkName
-        self.name = "Custom"
+        self.name = "DQN"
         try:
             with open("saves/" + self.networkName + "_" + self.name + ".json" , 'r') as fd:
                 self.bestWeights, self.bestScore = convertToNumpy(json.load(fd))

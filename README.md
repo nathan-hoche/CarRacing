@@ -2,6 +2,7 @@
 https://en.wikipedia.org/wiki/Reinforcement_learning
 https://smartlabai.medium.com/reinforcement-learning-algorithms-an-intuitive-overview-904e2dff5bbc
 https://towardsdatascience.com/introduction-to-various-reinforcement-learning-algorithms-i-q-learning-sarsa-dqn-ddpg-72a5e0cb6287
+https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1
 
 | Algorithm | Description | File | Applicability | Implemented ? |
 | --- | --- | --- | --- | --- |
@@ -11,3 +12,12 @@ https://towardsdatascience.com/introduction-to-various-reinforcement-learning-al
 | Q-learning or value-iteration methods |  |  |  | No |
 | Q-Learning |  |  |  | No |
 | Deep Q Neural Network (DQN) |  |  |  | No |
+
+# Research Papers
+
+| Algorithm | Paper |
+| --- | --- |
+| Deep Q Neural Network (DQN) | https://medium.com/@cyberlympha/recurrent-neural-networks-in-reinforcement-learning-11600819ede4 |
+| Deep Q Neural Network (DQN) | https://openreview.net/pdf?id=r1lyTjAqYX |
+| Deep Q Neural Network (DQN) | https://towardsdatascience.com/deep-q-learning-tutorial-mindqn-2a4c855abffc |
+| Deep Q Neural Network (DQN) | https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf |

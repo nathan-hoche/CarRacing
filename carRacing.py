@@ -75,7 +75,7 @@ def main(brain, estimator):
             step[0] = step[0] * 2 - 1
             step[1] = 1
             step[2] = 0
-            # print("Move ", "\t".join(["{}{:0.2f}".format(("+" if x >= 0 else ""),x) for x in step]), end=" \t")
+
             print("Move:", "{}{:0.2f}".format(("+" if step[0] >= 0 else ""),step[0]), step[1], step[2], sep="\t", end=" \t")
 
             observation, reward, terminated, truncated, info = ENV.step(step)
