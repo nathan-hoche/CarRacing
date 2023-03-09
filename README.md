@@ -4,14 +4,14 @@ https://smartlabai.medium.com/reinforcement-learning-algorithms-an-intuitive-ove
 https://towardsdatascience.com/introduction-to-various-reinforcement-learning-algorithms-i-q-learning-sarsa-dqn-ddpg-72a5e0cb6287
 https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1
 
-| Algorithm | Description | File | Applicability | Implemented ? |
-| --- | --- | --- | --- | --- |
-| Classic Genetic Algorithm |  |  |  | No |
-| Neat Algorithm |  |  |  | No |
-| PPO Algorithm |  |  |  | No |
-| Q-learning or value-iteration methods |  |  |  | No |
-| Q-Learning |  |  |  | No |
-| Deep Q Neural Network (DQN) |  |  |  | No |
+| Algorithm | Description | File | Applicability | Implemented ? | Responsible |
+| --- | --- | --- | --- | --- | --- |
+| Classic Genetic Algorithm |  |  |  | [ ] | |
+| Neat Algorithm |  |  |  | [ ] | Tom |
+| PPO Algorithm |  |  |  | [ ] | |
+| Q-learning or value-iteration methods |  |  |  | [ ] | |
+| Q-Learning |  |  |  | [ ] | |
+| Deep Q Neural Network (DQN) |  |  |  | [ ] | Nathan |
 
 # Research Papers
 
