@@ -6,12 +6,12 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 
 | Algorithm | Description | File | Applicability | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- | --- |
-| Classic Genetic Algorithm |  |  |  | [ ] | |
-| Neat Algorithm |  |  |  | [ ] | Tom |
-| PPO Algorithm |  |  |  | [ ] | |
-| Q-learning or value-iteration methods |  |  |  | [ ] | |
-| Q-Learning |  |  |  | [ ] | |
-| Deep Q Neural Network (DQN) |  |  |  | [ ] | Nathan |
+| Classic Genetic Algorithm |  |  |  | <input type=checkbox>  | |
+| Neat Algorithm |  |  |  | <input type=checkbox>  | Tom |
+| PPO Algorithm |  |  |  | <input type=checkbox>  | |
+| Q-learning or value-iteration methods |  |  |  | <input type=checkbox> | |
+| Q-Learning |  |  |  | <input type=checkbox>  | |
+| Deep Q Neural Network (DQN) |  |  |  | <input type=checkbox>  | Nathan |
 
 # Research Papers
 
