@@ -2,6 +2,8 @@ import gym
 import sys
 import os
 import importlib
+# For save the observation
+#from PIL import Image
 
 ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 
@@ -9,9 +11,14 @@ ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 # Observaton space: [[r, g, b] * 94] * 94] (RGB image)
 
 PENALITY = 0.10
+LIMIT_NEGATIVE_STEP = 30
 
 def formatWeights(weights:dict) -> list:
     return [weights["weight"], weights["bias"]]
+
+def skipUselessStep():
+    for _ in range(100):
+        ENV.step([0, 0, 0])
 
 def loadBrain(newtorkFile: str, estimatorFile) -> object:
     """
@@ -62,27 +69,38 @@ def main(brain, estimator):
     print("config: ", BRAIN, ESTIMATOR)
     for _ in range(100): # Number of simulations
 
-        observation, info = ENV.reset()
-        score = 0
+        observation, info = ENV.reset(seed=1)
+        score = 10
         Max_score = 0
+        skipUselessStep()
+        nbNegatif = 0
         while score >= 0:
             step = BRAIN.predict(observation)
             step = step[0]
             step[0] = step[0] * 2 - 1
-            step[1] = 1
+            # To remove the gas and brake
+            # step[1] = 1
             step[2] = 0
 
-            print("Move:", "{}{:0.2f}".format(("+" if step[0] >= 0 else ""), step[0]), step[1], step[2], sep="\t", end=" \t")
+            print("Move:", "{}{:0.2f}\t{:0.2f}\t{:0.2f}".format(("+" if step[0] >= 0 else ""), step[0], step[1], step[2]), end=" \t")
 
             nextObservation, reward, terminated, truncated, info = ENV.step(step)
             ESTIMATOR.memorize(observation, step, reward, nextObservation)
 
             observation = nextObservation
-            if terminated or truncated:
+            # To save the observation
+            # im = Image.fromarray(observation)
+            # im.save("test.png")
+
+            if terminated or truncated or nbNegatif == LIMIT_NEGATIVE_STEP:
                 break
             score += reward - PENALITY
             if score > Max_score:
                 Max_score = score
+            if reward < 0:
+                nbNegatif += 1
+            else:
+                nbNegatif = 0
             print("Score:", score)
 
         print("=====================================> END OF SIMULATION")
