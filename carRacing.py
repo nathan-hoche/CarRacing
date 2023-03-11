@@ -7,7 +7,7 @@ from saves.stats import stats
 # For save the observation
 #from PIL import Image
 
-ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
+ENV = gym.make("CarRacing-v2", render_mode="human")
 
 # Actions: [steering, gas, brake] [{-1 ... 1}, {0 ... 1}, {0 ... 1}]
 # Observaton space: [[r, g, b] * 94] * 94] (RGB image)
@@ -75,7 +75,7 @@ def main(brain, estimator):
     ESTIMATOR.setup(BRAIN.getAllWeights()) if hasattr(ESTIMATOR, "setup") else None
 
     print("config: ", BRAIN, ESTIMATOR)
-    for _ in range(100): # Number of simulations
+    for _ in range(1000): # Number of simulations
 
         observation, info = ENV.reset(seed=1)
         score = 10
@@ -120,7 +120,7 @@ def main(brain, estimator):
         newWeight = ESTIMATOR.update(BRAIN, MaxScore)
         if newWeight != None:
             BRAIN.train(newWeight)
-        
+
 
 if __name__ == "__main__":
     sys.argv.pop(0)
