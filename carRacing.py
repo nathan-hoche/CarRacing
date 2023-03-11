@@ -63,6 +63,10 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
 
 def main(brain, estimator):
     BRAIN, ESTIMATOR = loadBrain(brain, estimator)
+
+    ## If estimator has setup function call it
+    ESTIMATOR.setup(BRAIN.getAllWeights()) if hasattr(ESTIMATOR, "setup") else None
+
     print("config: ", BRAIN, ESTIMATOR)
     for _ in range(100): # Number of simulations
 
