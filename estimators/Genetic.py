@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import sys
 
 ############# UPDATE FUNC #############
 
@@ -81,18 +82,29 @@ class estimator:
     def createPopulation(self, weights: object):
         self.population = []
 
-        ## Based on the weights, create a population of 100 individuals
-        for i in range(100):
-            chromosome = []
-            for j in range(len(weights)):
-                chromosome.append(np.random.uniform(-1.0, 1.0))
+        print(weights)
+        ## Based on the weights, create a population
+        for _ in range(self.populationSize):
+            chromosome = np.array([])
+            for layer in weights.keys():
+                for type in weights[layer].keys():
+                    chromosome = np.append(np.random.uniform(-1, 1, weights[layer][type].size), chromosome)
+
+            print(f"chromosome: {len(chromosome)}")
             self.population.append(individual(chromosome))
 
     def applyWeights(self, chromosome):
-        i = 0
+        weights = {}
+        weightIndex = 0
         for layer in self.model.keys():
-            self.model[layer]["weight"] = chromosome[i]
-            i += 1
+            weights[layer] = {}
+            for type in self.model[layer].keys():
+                print(type)
+                typeSize = self.model[layer][type].size
+                weights[layer][type] = chromosome[weightIndex:weightIndex + typeSize].reshape(self.model[layer][type].shape)
+                weightIndex += typeSize
+
+        self.model = weights
 
     def crossover(self, parent1, parent2):
         ## Get the chromosome of each parent
@@ -100,40 +112,45 @@ class estimator:
         chromosome2 = parent2.getChromosome()
 
         ## Create a new chromosome
-        chromosome = []
+        chromosome = np.array([])
 
         ## Loop through each gene in the chromosome
-        for i in range(len(chromosome1)):
+        for i in range(chromosome1.size):
             ## Randomly select a gene from either parent
             if np.random.random() < 0.5:
-                chromosome.append(chromosome1[i])
+                chromosome = np.append(chromosome, chromosome1[i])
             else:
-                chromosome.append(chromosome2[i])
+                chromosome = np.append(chromosome, chromosome2[i])
 
         return chromosome
 
-    def mutate(self, chromosome):
+    def mutate(self, chromosome, probability=0.5):
         ## Try to mutate each gene in the chromosome
         ## The higher the fitness, the less likely it is to mutate
         for i in range(len(chromosome)):
-            if np.random.random() < (1 - self.population[i].getFitness()):
-                ## Add a random value that does not exceed 1 or -1
-                mutation = np.random.uniform(-0.1, 0.1)
-                if (chromosome[i] + mutation) > 1:
-                    chromosome[i] -= mutation
-                elif (chromosome[i] + mutation) < -1:
-                    chromosome[i] += mutation
+            ## Random between 0 and 1
+            if (np.random.random() < probability):
+                if (np.random.random() < 0.5):
+                    ## Add a random value that does not exceed 1 or -1
+                    mutation = np.random.uniform(-0.1, 0.1)
+                    if (chromosome[i] + mutation) > 1:
+                        chromosome[i] -= mutation
+                    elif (chromosome[i] + mutation) < -1:
+                        chromosome[i] += mutation
 
         return chromosome
 
     def newGeneration(self):
         print(f"Generation: {self.generation}")
         ## Select the best 10% of the population
-        tenPercent = self.populationSize / 10
+        tenPercent = int(self.populationSize / 10)
+        if (tenPercent == 0 or tenPercent == 1):
+            tenPercent = 2
+
         self.population = self.population[:tenPercent]
 
-        ## Generate 90 new individuals from the best 10% of the population
-        for i in range(0, tenPercent):
+        ## Generate 90% new individuals from the best 10% of the population
+        for i in range(0, self.populationSize - tenPercent):
             ## Select 2 random individuals from the best 10%
             parent1 = self.population[np.random.randint(0, tenPercent)]
             parent2 = self.population[np.random.randint(0, tenPercent)]
@@ -145,8 +162,16 @@ class estimator:
             self.population.append(individual(child))
 
         ## Mutate the population
-        for i in range(0, len(self.population)):
-            self.population[i].setChromosome(self.mutate(self.population[i].getChromosome()))
+        sys.stdout.write("Mutation: [%s]" % (" " * len(self.population) - 1))
+        sys.stdout.flush()
+        sys.stdout.write("\b" * (len(self.population)))
+
+        for i in range(1, len(self.population)):
+            self.population[i].setChromosome(self.mutate(self.population[i].getChromosome(), i / len(self.population)))
+            sys.stdout.write("-")
+            sys.stdout.flush()
+        sys.stdout.write("]\n")
+
 
 
     def update(self, brain:object=None, score=None, model=None, check=False):
