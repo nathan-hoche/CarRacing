@@ -24,3 +24,6 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | Deep Q Neural Network (DQN) | https://www.freecodecamp.org/news/an-introduction-to-deep-q-learning-lets-play-doom-54d02d8017d8 |
 | Deep Q Neural Network (DQN) | https://keras.io/examples/rl/deep_q_network_breakout/ |
 | Deep Q Neural Network (DQN) | https://github.com/keon/deep-q-learning/blob/master/dqn.py |
+| Deep Q Neural Network (DQN) | https://huggingface.co/blog/deep-rl-dqn |
+| Deep Q Neural Network (DQN) | https://huggingface.co/deep-rl-course/unit3/introduction |
+| Deep Q Neural Network (DQN) | https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_atari.py |
