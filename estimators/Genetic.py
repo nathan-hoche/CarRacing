@@ -34,11 +34,10 @@ def loopAll(weights: dict, func) -> dict:
 ############# CLASS #############
 
 class individual:
-    def __init__(self, chromosome) -> None:
-        self.genes = 32
+    def __init__(self, chromosome: list) -> None:
+        self.genes = len(chromosome)
         self.chromosome = chromosome
         self.fitness = 0
-        self.model = None
 
     def __str__(self) -> str:
         return str(self.chromosome)
@@ -157,8 +156,6 @@ class estimator:
             if (not model):
                 raise Exception(f"Model not found for {self.name} estimator")
 
-        self.currentIndividual += 1
-
         ## If all individuals have been tested, create a new generation
         if (self.currentIndividual == self.populationSize):
             self.currentIndividual = 0
@@ -166,7 +163,12 @@ class estimator:
             self.newGeneration()
         ## If not, test the next individual
         else:
+            if (not score):
+                raise Exception(f"Score not found for {self.name} estimator")
+            self.population[self.currentIndividual].setFitness(score)
             self.applyWeights(self.population[self.currentIndividual].getChromosome())
             return
 
+        ## Update the current individual
+        self.currentIndividual += 1
         return self.model;
