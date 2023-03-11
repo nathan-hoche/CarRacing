@@ -62,7 +62,7 @@ class estimator:
     def __init__(self) -> None:
         self.generation = 0
         self.currentIndividual = 0
-        self.populationSize = 10
+        self.populationSize = 20
         self.bestScore = -1
         self.name = "Genetic"
         self.population = []
@@ -90,7 +90,6 @@ class estimator:
                 for type in weights[layer].keys():
                     chromosome = np.append(np.random.uniform(-1, 1, weights[layer][type].size), chromosome)
 
-            print(f"chromosome: {len(chromosome)}")
             self.population.append(individual(chromosome))
 
     def applyWeights(self, chromosome):
@@ -114,13 +113,25 @@ class estimator:
         ## Create a new chromosome
         chromosome = np.array([])
 
+
+        ratio = np.random.randint(0, chromosome1.size)
+
+        ## Merge the 2 chromosomes randomly
+        if (np.random.random() < 0.5):
+            chromosome = np.append(chromosome, chromosome1[:ratio])
+            chromosome = np.append(chromosome, chromosome2[ratio:])
+        else:
+            chromosome = np.append(chromosome, chromosome2[:ratio])
+            chromosome = np.append(chromosome, chromosome1[ratio:])
+
+        ## Merge
         ## Loop through each gene in the chromosome
-        for i in range(chromosome1.size):
-            ## Randomly select a gene from either parent
-            if np.random.random() < 0.5:
-                chromosome = np.append(chromosome, chromosome1[i])
-            else:
-                chromosome = np.append(chromosome, chromosome2[i])
+        # for i in range(chromosome1.size):
+        #     ## Randomly select a gene from either parent
+        #     if np.random.random() < 0.5:
+        #         chromosome = np.append(chromosome, chromosome1[i])
+        #     else:
+        #         chromosome = np.append(chromosome, chromosome2[i])
 
         return chromosome
 
@@ -149,6 +160,9 @@ class estimator:
 
         self.population = self.population[:tenPercent]
 
+        sys.stdout.write("Cross-over:\t [%s]" % (" " * (len(self.population) - 1)))
+        sys.stdout.flush()
+        sys.stdout.write("\b" * (len(self.population)))
         ## Generate 90% new individuals from the best 10% of the population
         for i in range(0, self.populationSize - tenPercent):
             ## Select 2 random individuals from the best 10%
@@ -160,9 +174,12 @@ class estimator:
 
             ## Add the new individual to the population
             self.population.append(individual(child))
+            sys.stdout.write("-")
+            sys.stdout.flush()
+        sys.stdout.write("]\n")
 
         ## Mutate the population
-        sys.stdout.write("Mutation: [%s]" % (" " * len(self.population) - 1))
+        sys.stdout.write("Mutation:\t [%s]" % (" " * (len(self.population) - 1)))
         sys.stdout.flush()
         sys.stdout.write("\b" * (len(self.population)))
 
