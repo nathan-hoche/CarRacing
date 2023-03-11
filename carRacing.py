@@ -2,6 +2,8 @@ import gym
 import sys
 import os
 import importlib
+
+from saves.stats import stats
 # For save the observation
 #from PIL import Image
 
@@ -61,8 +63,13 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
         exit(0)
     return networkClassFd, estimatorClassFd
 
+def log(score, maxScore, nbNegatif):
+    print("Meab:", score, "\tMax:", maxScore, "\tNeg:", nbNegatif, end="\r")
+
 def main(brain, estimator):
     BRAIN, ESTIMATOR = loadBrain(brain, estimator)
+
+    STATS = stats(BRAIN.__str__() + "_" + ESTIMATOR.__str__())
 
     ## If estimator has setup function call it
     ESTIMATOR.setup(BRAIN.getAllWeights()) if hasattr(ESTIMATOR, "setup") else None
@@ -72,7 +79,8 @@ def main(brain, estimator):
 
         observation, info = ENV.reset(seed=1)
         score = 10
-        Max_score = 0
+        MaxScore = 0
+        allScore = []
         skipUselessStep()
         nbNegatif = 0
         while score >= 0:
@@ -96,17 +104,20 @@ def main(brain, estimator):
             if terminated or truncated or nbNegatif == LIMIT_NEGATIVE_STEP:
                 break
             score += reward - PENALITY
-            if score > Max_score:
-                Max_score = score
+            if score > MaxScore:
+                MaxScore = score
             if reward < 0:
                 nbNegatif += 1
             else:
                 nbNegatif = 0
+            allScore.append(score)
             print("Score:", score)
 
         print("=====================================> END OF SIMULATION")
-        print("Max score:", Max_score)
-        newWeight = ESTIMATOR.update(BRAIN, Max_score)
+        averageScore = sum(allScore) / len(allScore)
+        print("Max score:", MaxScore, "\tAverage score:", averageScore)
+        STATS.save(MaxScore, averageScore, score)
+        newWeight = ESTIMATOR.update(BRAIN, MaxScore)
         if newWeight != None:
             BRAIN.train(newWeight)
         
