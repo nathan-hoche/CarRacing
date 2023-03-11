@@ -62,7 +62,7 @@ class estimator:
     def __init__(self) -> None:
         self.generation = 0
         self.currentIndividual = 0
-        self.populationSize = 20
+        self.populationSize = 10
         self.bestScore = -1
         self.name = "Genetic"
         self.population = []
@@ -77,6 +77,7 @@ class estimator:
 
     def setup(self, weights: object):
         self.createPopulation(weights)
+        self.newGeneration()
         self.model = weights
 
     def createPopulation(self, weights: object):
@@ -84,11 +85,11 @@ class estimator:
 
         print(weights)
         ## Based on the weights, create a population
-        for _ in range(self.populationSize):
+        for i in range(self.populationSize):
             chromosome = np.array([])
             for layer in weights.keys():
                 for type in weights[layer].keys():
-                    chromosome = np.append(np.random.uniform(-1, 1, weights[layer][type].size), chromosome)
+                    chromosome = np.append(chromosome, weights[layer][type].reshape(weights[layer][type].size))
 
             self.population.append(individual(chromosome))
 
@@ -124,36 +125,30 @@ class estimator:
             chromosome = np.append(chromosome, chromosome2[:ratio])
             chromosome = np.append(chromosome, chromosome1[ratio:])
 
-        ## Merge
-        ## Loop through each gene in the chromosome
-        # for i in range(chromosome1.size):
-        #     ## Randomly select a gene from either parent
-        #     if np.random.random() < 0.5:
-        #         chromosome = np.append(chromosome, chromosome1[i])
-        #     else:
-        #         chromosome = np.append(chromosome, chromosome2[i])
-
         return chromosome
 
     def mutate(self, chromosome, probability=0.5):
         ## Try to mutate each gene in the chromosome
         ## The higher the fitness, the less likely it is to mutate
-        for i in range(len(chromosome)):
+        for i in range(chromosome.size):
             ## Random between 0 and 1
             if (np.random.random() < probability):
-                if (np.random.random() < 0.5):
-                    ## Add a random value that does not exceed 1 or -1
-                    mutation = np.random.uniform(-0.1, 0.1)
-                    if (chromosome[i] + mutation) > 1:
-                        chromosome[i] -= mutation
-                    elif (chromosome[i] + mutation) < -1:
-                        chromosome[i] += mutation
+                ## Add a random value that does not exceed 1 or -1
+                mutation = np.random.uniform(-0.1, 0.1)
+                if (chromosome[i] + mutation) > 1:
+                    chromosome[i] -= mutation
+                elif (chromosome[i] + mutation) < -1:
+                    chromosome[i] += mutation
 
         return chromosome
 
     def newGeneration(self):
-        print(f"Generation: {self.generation}")
+        print(f"Generation: {self.generation + 1}")
         ## Select the best 10% of the population
+        self.population = sorted(self.population, key=lambda x: x.getFitness(), reverse=True)
+        ## Print each individual's fitness
+        for i in range(len(self.population)):
+            print(f"{i}: {self.population[i].getFitness()}")
         tenPercent = int(self.populationSize / 10)
         if (tenPercent == 0 or tenPercent == 1):
             tenPercent = 2
@@ -183,8 +178,10 @@ class estimator:
         sys.stdout.flush()
         sys.stdout.write("\b" * (len(self.population)))
 
-        for i in range(1, len(self.population)):
-            self.population[i].setChromosome(self.mutate(self.population[i].getChromosome(), i / len(self.population)))
+        ## Mutate each individual in the population based on its fitness (the higher the fitness, the less likely it is to mutate)
+        ## Except for the best individual
+        for i in range(1, self.populationSize):
+            self.population[i].setChromosome(self.mutate(self.population[i].getChromosome(), i / self.populationSize))
             sys.stdout.write("-")
             sys.stdout.flush()
         sys.stdout.write("]\n")
@@ -199,21 +196,23 @@ class estimator:
         if (not self.population):
             self.createPopulation(model)
 
+
+        ## Test the next individual
+        print(f"Individual: {self.currentIndividual}")
+        if (not score):
+            raise Exception(f"Score not found for {self.name} estimator")
+        self.population[self.currentIndividual].setFitness(score)
+        self.applyWeights(self.population[self.currentIndividual].getChromosome())
+        if (score > self.bestScore):
+            self.bestScore = score
+            brain.save(score)
+
         ## If all individuals have been tested, create a new generation
-        if (self.currentIndividual == self.populationSize):
+        if (self.currentIndividual == self.populationSize - 1):
             self.currentIndividual = 0
             self.generation += 1
             self.newGeneration()
-        ## If not, test the next individual
-        else:
-            print(f"Individual: {self.currentIndividual}")
-            if (not score):
-                raise Exception(f"Score not found for {self.name} estimator")
-            self.population[self.currentIndividual].setFitness(score)
-            self.applyWeights(self.population[self.currentIndividual].getChromosome())
-            if (score > self.bestScore):
-                self.bestScore = score
-                brain.save(score)
+            return self.model
 
         ## Update the current individual
         self.currentIndividual += 1
