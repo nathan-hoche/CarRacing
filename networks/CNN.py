@@ -67,15 +67,12 @@ class brain:
         return res
 
 
-    def train(self, wd1=None, wd2=None, wd3=None, check=False):
+    def train(self, weights:dict=None, check=False):
         if check:
             return
-        if wd1 is not None:
-            self.model.get_layer("dense1").set_weights(wd1)
-        if wd2 is not None:
-            self.model.get_layer("dense2").set_weights(wd2)
-        if wd3 is not None:
-            self.model.get_layer("dense3").set_weights(wd3)
+        for key in weights:
+            formatedWeights = [weights[key]["weight"], weights[key]["bias"]]
+            self.model.get_layer(key).set_weights(formatedWeights)
 
 
 

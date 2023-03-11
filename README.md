@@ -8,7 +8,7 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | --- | --- | --- | --- | --- | --- |
 | Classic Genetic Algorithm |  |  |  | ⬜️ | Gabriel  |
 | Neat Algorithm |  |  |  | ⬜️  | Tom |
-| PPO Algorithm |  |  |  | ⬜️  | |
+| PPO Algorithm |  |  |  | ⬜️  | Hugo |
 | Q-learning or value-iteration methods |  |  |  | ⬜️ | |
 | Q-Learning |  |  |  | ⬜️  | |
 | Deep Q Neural Network (DQN) |  |  |  | ⬜️  | Nathan |

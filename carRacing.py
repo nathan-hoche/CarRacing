@@ -13,9 +13,6 @@ ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 PENALITY = 0.10
 LIMIT_NEGATIVE_STEP = 30
 
-def formatWeights(weights:dict) -> list:
-    return [weights["weight"], weights["bias"]]
-
 def skipUselessStep():
     for _ in range(100):
         ENV.step([0, 0, 0])
@@ -107,7 +104,8 @@ def main(brain, estimator):
         print("Max score:", Max_score)
         newWeight = ESTIMATOR.update(BRAIN, Max_score)
         if newWeight != None:
-            BRAIN.train(wd1=formatWeights(newWeight["dense1"]), wd2=formatWeights(newWeight["dense2"]), wd3=formatWeights(newWeight["dense3"]))
+            BRAIN.train(newWeight)
+        
 
 if __name__ == "__main__":
     sys.argv.pop(0)
