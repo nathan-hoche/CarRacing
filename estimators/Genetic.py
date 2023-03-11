@@ -31,6 +31,9 @@ def loopAll(weights: dict, func) -> dict:
             res[x][y] = func(weights[x][y])
     return res
 
+def formatWeights(weights:dict) -> list:
+    return [weights["weight"], weights["bias"]]
+
 ############# CLASS #############
 
 class individual:
@@ -59,7 +62,10 @@ class estimator:
         self.generation = 0
         self.currentIndividual = 0
         self.populationSize = 10
+        self.bestScore = -1
         self.name = "Genetic"
+        self.population = []
+        self.model = None
 
     def __str__(self) -> str:
         return self.name
@@ -68,31 +74,25 @@ class estimator:
         if check:
             return
 
-    def createPopulation(self):
+    def setup(self, weights: object):
+        self.createPopulation(weights)
+        self.model = weights
+
+    def createPopulation(self, weights: object):
         self.population = []
-        ## Get model weights
-        weights = self.model.get_weights()
 
         ## Based on the weights, create a population of 100 individuals
         for i in range(100):
             chromosome = []
             for j in range(len(weights)):
-                chromosome.append(np.random.randf(0, 1))
+                chromosome.append(np.random.uniform(-1.0, 1.0))
             self.population.append(individual(chromosome))
 
     def applyWeights(self, chromosome):
-        ## Replace the weights of the model with the chromosome
-        weights = self.model.get_weights()
-
-        for i in range(len(weights)):
-            weights[i] = chromosome[i]
-
-        self.model.set_weights(weights)
-
-        return self.model
-
-    def predict(self, observation):
-        return
+        i = 0
+        for layer in self.model.keys():
+            self.model[layer]["weight"] = chromosome[i]
+            i += 1
 
     def crossover(self, parent1, parent2):
         ## Get the chromosome of each parent
@@ -127,6 +127,7 @@ class estimator:
         return chromosome
 
     def newGeneration(self):
+        print(f"Generation: {self.generation}")
         ## Select the best 10% of the population
         tenPercent = self.populationSize / 10
         self.population = self.population[:tenPercent]
@@ -151,10 +152,10 @@ class estimator:
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
-        ## Set the model the first time update is called to get the neural network configuration
-        if (not self.model):
-            if (not model):
-                raise Exception(f"Model not found for {self.name} estimator")
+
+        ## On the first update, create the population based on the model
+        if (not self.population):
+            self.createPopulation(model)
 
         ## If all individuals have been tested, create a new generation
         if (self.currentIndividual == self.populationSize):
@@ -163,12 +164,15 @@ class estimator:
             self.newGeneration()
         ## If not, test the next individual
         else:
+            print(f"Individual: {self.currentIndividual}")
             if (not score):
                 raise Exception(f"Score not found for {self.name} estimator")
             self.population[self.currentIndividual].setFitness(score)
             self.applyWeights(self.population[self.currentIndividual].getChromosome())
-            return
+            if (score > self.bestScore):
+                self.bestScore = score
+                brain.save(score)
 
         ## Update the current individual
         self.currentIndividual += 1
-        return self.model;
+        return self.model
