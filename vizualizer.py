@@ -43,12 +43,13 @@ def loadBrain(newtorkFile: str, estimatorName: str) -> object:
         exit(0)
     return networkClassFd
 
-def main(brain, estimatorName):
+def main(brain, estimatorName, seed=None):
     BRAIN = loadBrain(brain, estimatorName)
 
-    print("config: ", BRAIN, estimatorName)
+    print("config: ", BRAIN, estimatorName + "\tseed:", seed)
 
-    observation, info = ENV.reset(seed=1)
+    observation, info = ENV.reset(seed=seed)
+    
     score = 10
     MaxScore = 0
     allScore = []
@@ -90,14 +91,17 @@ if __name__ == "__main__":
     sys.argv.pop(0)
     if len(sys.argv) == 2:
         main(sys.argv[0], sys.argv[1])
+    elif len(sys.argv) == 3:
+        main(sys.argv[0], sys.argv[1], int(sys.argv[2]))
     else:
         Bdir =  os.listdir(os.getcwd() + "/networks/")
         Bdir = [x.replace(".py", "") for x in Bdir if x.endswith(".py")]
         Edir =  os.listdir(os.getcwd() + "/estimators/")
         Edir = [x.replace(".py", "") for x in Edir if x.endswith(".py")]
         print("ERROR: Invalid number of arguments")
-        print("USAGE: python3 carRacing.py Brain Estimator")
+        print("USAGE: python3 vizualizer.py Brain Estimator [seed]")
         print("EXAMPLE: python3 carRacing.py CNN Custom")
+        print("Seed (int) is optional, by default is random")
         print("List of Brain:\n\t-", "\n\t- ".join(Bdir))
         print("List of Estimator:\n\t-", "\n\t- ".join(Edir))
     ENV.close()
