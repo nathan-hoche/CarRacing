@@ -56,8 +56,8 @@ def main(brain, estimatorName, seed=None):
     skipUselessStep()
     nbNegatif = 0
     while score >= 0:
-        step = BRAIN.predict(observation)
-        step = step[0]
+        action = BRAIN.predict(observation)
+        step = action[0] if type(action) != dict else action["step"]
         step[0] = step[0] * 2 - 1
         # To go forward
         # step[1] = 1
