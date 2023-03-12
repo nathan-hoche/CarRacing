@@ -152,8 +152,9 @@ class estimator:
         ## Generate 90% new individuals from the best 10% of the population
         for i in range(0, self.populationSize - tenPercent):
             ## Select 2 random individuals from the best 10%
-            parent1 = self.population[np.random.randint(0, tenPercent)]
-            parent2 = self.population[np.random.randint(0, tenPercent)]
+            #parent1 = self.population[np.random.randint(0, tenPercent)]
+            parent1 = self.population[0]
+            parent2 = self.population[np.random.randint(0, len(self.population))]
 
             ## Generate a new individual by crossing over the 2 parents
             child = self.crossover(parent1, parent2)
