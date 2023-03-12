@@ -99,7 +99,6 @@ class estimator:
         for layer in self.model.keys():
             weights[layer] = {}
             for type in self.model[layer].keys():
-                print(type)
                 typeSize = self.model[layer][type].size
                 weights[layer][type] = chromosome[weightIndex:weightIndex + typeSize].reshape(self.model[layer][type].shape)
                 weightIndex += typeSize
@@ -127,18 +126,10 @@ class estimator:
 
         return chromosome
 
-    def mutate(self, chromosome, probability=0.5):
+    def mutate(self, chromosome, probability):
         ## Try to mutate each gene in the chromosome
         ## The higher the fitness, the less likely it is to mutate
-        for i in range(chromosome.size):
-            ## Random between 0 and 1
-            if (np.random.random() < probability):
-                ## Add a random value that does not exceed 1 or -1
-                mutation = np.random.uniform(-0.1, 0.1)
-                if (chromosome[i] + mutation) > 1:
-                    chromosome[i] -= mutation
-                elif (chromosome[i] + mutation) < -1:
-                    chromosome[i] += mutation
+        chromosome = np.array([gene if np.random.random() < probability else randomUpdate(gene) for gene in chromosome])
 
         return chromosome
 
@@ -181,7 +172,7 @@ class estimator:
         ## Mutate each individual in the population based on its fitness (the higher the fitness, the less likely it is to mutate)
         ## Except for the best individual
         for i in range(1, self.populationSize):
-            self.population[i].setChromosome(self.mutate(self.population[i].getChromosome(), i / self.populationSize))
+            self.population[i].setChromosome(self.mutate(self.population[i].getChromosome(), (i + 1) / self.populationSize))
             sys.stdout.write("-")
             sys.stdout.flush()
         sys.stdout.write("]\n")
@@ -196,13 +187,11 @@ class estimator:
         if (not self.population):
             self.createPopulation(model)
 
-
-        ## Test the next individual
+        ## Update the current individual
         print(f"Individual: {self.currentIndividual}")
         if (not score):
             raise Exception(f"Score not found for {self.name} estimator")
         self.population[self.currentIndividual].setFitness(score)
-        self.applyWeights(self.population[self.currentIndividual].getChromosome())
         if (score > self.bestScore):
             self.bestScore = score
             brain.save(score)
@@ -214,6 +203,7 @@ class estimator:
             self.newGeneration()
             return self.model
 
-        ## Update the current individual
+        ## Test the next individual
         self.currentIndividual += 1
+        self.applyWeights(self.population[self.currentIndividual].getChromosome())
         return self.model
