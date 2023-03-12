@@ -15,8 +15,8 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 
 | Model | Description | File | Applicability | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- | --- |
-| CNN |  |  |  | ⬜️  | Nathan |
-| Fully Connected |  |  |  | ⬜️  | Gabriel |
+| CNN |  |  |  | ✅  | Nathan |
+| Fully Connected |  |  |  | ✅  | Gabriel |
 # Research Papers
 
 | Algorithm | Paper |
