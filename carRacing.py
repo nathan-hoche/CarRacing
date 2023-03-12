@@ -7,13 +7,13 @@ from saves.stats import stats
 # For save the observation
 #from PIL import Image
 
-ENV = gym.make("CarRacing-v2", render_mode="human")
+ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 
 # Actions: [steering, gas, brake] [{-1 ... 1}, {0 ... 1}, {0 ... 1}]
 # Observaton space: [[r, g, b] * 94] * 94] (RGB image)
 
 PENALITY = 0.10
-LIMIT_NEGATIVE_STEP = 30
+LIMIT_NEGATIVE_STEP = 100
 
 def skipUselessStep():
     for _ in range(100):
@@ -75,7 +75,7 @@ def main(brain, estimator):
     ESTIMATOR.setup(BRAIN.getAllWeights()) if hasattr(ESTIMATOR, "setup") else None
 
     print("config: ", BRAIN, ESTIMATOR)
-    for _ in range(1000): # Number of simulations
+    for _ in range(10000): # Number of simulations
 
         observation, info = ENV.reset(seed=1)
         score = 10
@@ -87,9 +87,10 @@ def main(brain, estimator):
             step = BRAIN.predict(observation)
             step = step[0]
             step[0] = step[0] * 2 - 1
-            # To remove the gas and brake
+            # To go forward
             # step[1] = 1
-            step[2] = 0
+            # To remove the brake
+            # step[2] = 0
 
             print("Move:", "{}{:0.2f}\t{:0.2f}\t{:0.2f}".format(("+" if step[0] >= 0 else ""), step[0], step[1], step[2]), end=" \t")
 
