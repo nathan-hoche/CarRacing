@@ -8,7 +8,7 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | Algorithm | Description | File | Applicability | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- | --- |
 | Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
-| Deep Q Neural Network (DQN) |  |DQN.py |✅ |🚧 | Nathan |
+| Deep Q Neural Network (DQN) |  |DQN.py |✅ |🔧 | Nathan |
 | Neat Algorithm |  |  |✅ | 🚧 | Tom |
 | DDPG Algorithm |  |  |✅ |🚧 | Gabriel |
 | PPO Algorithm |  |  |✅ |🔴 | Hugo |
@@ -20,7 +20,7 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | --- | --- | --- | --- | --- |
 | CNN |  |CNN.py |✅ | Nathan |
 | Fully Connected |  |FullyConnected.py |✅ | Gabriel |
-| Selective CNN |  |SelectiveCNN.py |🚧 | Nathan |
+| Selective CNN |  |SelectiveCNN.py |✅ | Nathan |
 
 # Research Papers
 | Algorithm | Paper |
@@ -35,3 +35,4 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | Deep Q Neural Network (DQN) | https://huggingface.co/blog/deep-rl-dqn |
 | Deep Q Neural Network (DQN) | https://huggingface.co/deep-rl-course/unit3/introduction |
 | Deep Q Neural Network (DQN) | https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_atari.py |
+| Deep Q Neural Network (DQN) | https://github.com/pekaalto/DQN |
