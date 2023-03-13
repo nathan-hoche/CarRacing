@@ -6,17 +6,17 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 
 | Algorithm | Description | File | Applicability | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- | --- |
-| Classic Genetic Algorithm |  | Genetic.py | ✅ | ✅ | Gabriel  |
-| Deep Q Neural Network (DQN) |  | DQN.py | ✅ | 🚧 | Nathan |
-| Neat Algorithm |  |  | ✅ | 🚧 | Tom |
-| PPO Algorithm |  |  | ✅ | 🔴 | Hugo |
-| Q-learning or value-iteration methods |  |  |  | 🔴 | |
+| Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
+| Deep Q Neural Network (DQN) |  |DQN.py |✅ |🚧 | Nathan |
+| Neat Algorithm |  |  |✅ | 🚧 | Tom |
+| PPO Algorithm |  |  |✅ |🔴 | Hugo |
+| Q-learning or value-iteration methods |  |  |  |🔴 | |
 | Q-Learning |  |  |  | 🔴 | |
 
 | Model | Description | File | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- |
-| CNN |  | CNN.py | ✅ | Nathan |
-| Fully Connected |  | FullyConnected.py | ✅ | Gabriel |
+| CNN |  |CNN.py |✅ | Nathan |
+| Fully Connected |  |FullyConnected.py |✅ | Gabriel |
 # Research Papers
 
 | Algorithm | Paper |
