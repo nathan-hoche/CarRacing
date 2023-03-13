@@ -84,8 +84,8 @@ def main(brain, estimator):
         skipUselessStep()
         nbNegatif = 0
         while score >= 0:
-            step = BRAIN.predict(observation)
-            step = step[0]
+            action = BRAIN.predict(observation)
+            step = action[0] if type(action) != dict else action["step"]
             step[0] = step[0] * 2 - 1
             # To go forward
             # step[1] = 1
@@ -95,7 +95,7 @@ def main(brain, estimator):
             print("Move:", "{}{:0.2f}\t{:0.2f}\t{:0.2f}".format(("+" if step[0] >= 0 else ""), step[0], step[1], step[2]), end=" \t")
 
             nextObservation, reward, terminated, truncated, info = ENV.step(step)
-            ESTIMATOR.memorize(observation, step, reward, nextObservation)
+            ESTIMATOR.memorize(observation, action, reward, nextObservation)
 
             observation = nextObservation
             # To save the observation
