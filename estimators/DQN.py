@@ -5,7 +5,7 @@ import sys
 EPSILON_MIN = 0.1
 GAMMA = 0.95
 BATCH_SIZE = 64
-EPSILON_DECAY = 0.999 - BATCH_SIZE / 1000
+EPSILON_DECAY = 0.999
 
 ############# UPDATE FUNC #############
 
@@ -77,13 +77,14 @@ class estimator:
     def update(self, brain:object=None, score=None, check=False):
         if check:
             return
-        weights = brain.getAllWeights()
-        if score > self.bestScore:
-            self.bestScore = score
-            self.bestWeights = weights
-            brain.save(score)
-        else:
-            brain.train(self.bestWeights)
+        #weights = brain.getAllWeights()
+        # if score > self.bestScore:
+        #     self.bestScore = score
+        #     self.bestWeights = weights
+        #     brain.save(score)
+        # else:
+        #     brain.train(self.bestWeights)
+        brain.save(score)
         returnValue = dqnUpdate(brain, self.memory)
         self.memory = []
         self.memoryPos = 0
