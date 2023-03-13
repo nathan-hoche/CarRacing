@@ -17,6 +17,7 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | --- | --- | --- | --- | --- |
 | CNN |  |CNN.py |✅ | Nathan |
 | Fully Connected |  |FullyConnected.py |✅ | Gabriel |
+| Selective CNN |  |SelectiveCNN.py |🚧 | Nathan |
 # Research Papers
 
 | Algorithm | Paper |
