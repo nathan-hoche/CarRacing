@@ -4,22 +4,25 @@ https://smartlabai.medium.com/reinforcement-learning-algorithms-an-intuitive-ove
 https://towardsdatascience.com/introduction-to-various-reinforcement-learning-algorithms-i-q-learning-sarsa-dqn-ddpg-72a5e0cb6287
 https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1
 
+# Implemented Reinforcement algorithms
 | Algorithm | Description | File | Applicability | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- | --- |
 | Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
 | Deep Q Neural Network (DQN) |  |DQN.py |✅ |🚧 | Nathan |
 | Neat Algorithm |  |  |✅ | 🚧 | Tom |
+| DDPG Algorithm |  |  |✅ |🚧 | Gabriel |
 | PPO Algorithm |  |  |✅ |🔴 | Hugo |
 | Q-learning or value-iteration methods |  |  |  |🔴 | |
 | Q-Learning |  |  |  | 🔴 | |
 
+# Implemented models
 | Model | Description | File | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- |
 | CNN |  |CNN.py |✅ | Nathan |
 | Fully Connected |  |FullyConnected.py |✅ | Gabriel |
 | Selective CNN |  |SelectiveCNN.py |🚧 | Nathan |
-# Research Papers
 
+# Research Papers
 | Algorithm | Paper |
 | --- | --- |
 | Deep Q Neural Network (DQN) | https://medium.com/@cyberlympha/recurrent-neural-networks-in-reinforcement-learning-11600819ede4 |
