@@ -42,7 +42,7 @@ class brain:
             self.model.add(Dense(128, activation='sigmoid', name='dense1'))
             self.model.add(Dense(32, activation='sigmoid', name='dense2'))
             self.model.add(Dense(len(ACTION_SPACE), activation='softmax', name='dense3'))
-            self.model.compile(loss='mean_squared_error', optimizer="adam", metrics=['accuracy'])
+            self.model.compile(loss='mean_squared_error', optimizer=Adam(lr=0.001, epsilon=1e-7), metrics=['accuracy'])
         self.model.summary()
         self.epsilon = 1.0
 
