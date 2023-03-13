@@ -62,7 +62,7 @@ class estimator:
     def __init__(self) -> None:
         self.generation = 0
         self.currentIndividual = 0
-        self.populationSize = 10
+        self.populationSize = 50
         self.bestScore = -1
         self.name = "Genetic"
         self.population = []
@@ -113,7 +113,6 @@ class estimator:
         ## Create a new chromosome
         chromosome = np.array([])
 
-
         ratio = np.random.randint(0, chromosome1.size)
 
         ## Merge the 2 chromosomes randomly
@@ -129,7 +128,14 @@ class estimator:
     def mutate(self, chromosome, probability):
         ## Try to mutate each gene in the chromosome
         ## The higher the fitness, the less likely it is to mutate
-        chromosome = np.array([gene if np.random.random() < probability else randomUpdate(gene) for gene in chromosome])
+        for i in range(chromosome.size):
+            if (np.random.random() < probability):
+                ## Add and prevent overflow
+                chromosome[i] += np.random.uniform(-0.1, 0.1)
+                if (chromosome[i] > 1):
+                    chromosome[i] = 1
+                elif (chromosome[i] < -1):
+                    chromosome[i] = -1
 
         return chromosome
 
@@ -152,9 +158,8 @@ class estimator:
         ## Generate 90% new individuals from the best 10% of the population
         for i in range(0, self.populationSize - tenPercent):
             ## Select 2 random individuals from the best 10%
-            #parent1 = self.population[np.random.randint(0, tenPercent)]
-            parent1 = self.population[0]
-            parent2 = self.population[np.random.randint(0, len(self.population))]
+            parent1 = self.population[np.random.randint(0, tenPercent)]
+            parent2 = self.population[np.random.randint(0, tenPercent)]
 
             ## Generate a new individual by crossing over the 2 parents
             child = self.crossover(parent1, parent2)
@@ -199,9 +204,10 @@ class estimator:
 
         ## If all individuals have been tested, create a new generation
         if (self.currentIndividual == self.populationSize - 1):
-            self.currentIndividual = 0
+            self.currentIndividual = 1
             self.generation += 1
             self.newGeneration()
+            self.applyWeights(self.population[self.currentIndividual].getChromosome())
             return self.model
 
         ## Test the next individual
