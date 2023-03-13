@@ -77,7 +77,7 @@ def main(brain, estimator):
     print("config: ", BRAIN, ESTIMATOR)
     for _ in range(10000): # Number of simulations
 
-        observation, info = ENV.reset(seed=None)
+        observation, info = ENV.reset(seed=1)
         score = 10
         MaxScore = 0
         allScore = []
