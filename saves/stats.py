@@ -38,15 +38,14 @@ class stats():
         if self.df is None:
             print("Error: not in read mode")
             return None
-        plt.subplot(3, 1, 1)
-        plt.plot(self.df["Max score"])
-        plt.title("Max score")
-        plt.subplot(3, 1, 2)
-        plt.plot(self.df["Average score"])
-        plt.title("Average score")
-        plt.subplot(3, 1, 3)
-        plt.plot(self.df["Last score"])
-        plt.title("Last score")
+        fig, axs = plt.subplots(3, 1)
+        fig.tight_layout(pad=1.2)
+        axs[0].plot(self.df["Max score"])
+        axs[0].set_title("Max score")
+        axs[1].plot(self.df["Average score"])
+        axs[1].set_title("Average score")
+        axs[2].plot(self.df["Last score"])
+        axs[2].set_title("Last score")
         plt.show()
 
 if __name__ == "__main__":

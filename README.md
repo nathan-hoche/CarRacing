@@ -1,8 +1,28 @@
 # General Information
-https://en.wikipedia.org/wiki/Reinforcement_learning
-https://smartlabai.medium.com/reinforcement-learning-algorithms-an-intuitive-overview-904e2dff5bbc
-https://towardsdatascience.com/introduction-to-various-reinforcement-learning-algorithms-i-q-learning-sarsa-dqn-ddpg-72a5e0cb6287
-https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1
+
+# Usage
+
+## Installation
+```bash
+pip install -r requirements.txt
+```
+
+## Run Training Session
+```bash
+python carRacing.py MODEL_NAME ALGORITHM_NAME
+```
+
+## Run a trained model
+```bash
+python visualize.py MODEL_NAME ALGORITHM_NAME
+# or
+python visualize.py MODEL_NAME ALGORITHM_NAME SEED # to run a specific seed
+```
+
+## View statistics
+```bash
+python saves/stats.py CSV_FILE
+```
 
 # Implemented Reinforcement algorithms
 | Algorithm | Description | File | Applicability | Implemented ? | Responsible |
@@ -12,8 +32,14 @@ https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-
 | Neat Algorithm |  |  |✅ | 🚧 | Tom |
 | DDPG Algorithm |  |  |✅ |🚧 | Gabriel |
 | PPO Algorithm |  |  |✅ |🔴 | Hugo |
+| Actor Critic Method |  |  |✅ |🔴 | Hugo |
 | Q-learning or value-iteration methods |  |  |  |🔴 | |
 | Q-Learning |  |  |  | 🔴 | |
+
+> https://en.wikipedia.org/wiki/Reinforcement_learning
+> https://smartlabai.medium.com/reinforcement-learning-algorithms-an-intuitive-overview-904e2dff5bbc
+> https://towardsdatascience.com/introduction-to-various-reinforcement-learning-algorithms-i-q-learning-sarsa-dqn-ddpg-72a5e0cb6287
+> https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1
 
 # Implemented models
 | Model | Description | File | Implemented ? | Responsible |
