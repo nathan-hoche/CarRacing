@@ -75,7 +75,8 @@ class estimator:
         if check:
             return
 
-    def setup(self, weights: object):
+    def setup(self, brain: object):
+        weights = brain.getAllWeights()
         self.createPopulation(weights)
         self.newGeneration()
         self.model = weights

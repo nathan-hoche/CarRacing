@@ -72,7 +72,7 @@ def main(brain, estimator):
     STATS = stats(BRAIN.__str__() + "_" + ESTIMATOR.__str__())
 
     ## If estimator has setup function call it
-    ESTIMATOR.setup(BRAIN.getAllWeights()) if hasattr(ESTIMATOR, "setup") else None
+    ESTIMATOR.setup(BRAIN) if hasattr(ESTIMATOR, "setup") else None
 
     print("config: ", BRAIN, ESTIMATOR)
     for _ in range(10000): # Number of simulations
