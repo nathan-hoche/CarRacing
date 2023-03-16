@@ -44,7 +44,7 @@ class brain:
             self.model.add(Dense(len(ACTION_SPACE), activation='softmax', name='dense3'))
             self.model.compile(loss='mean_squared_error', optimizer=Adam(lr=0.001, epsilon=1e-7), metrics=['accuracy'])
         self.model.summary()
-        self.epsilon = 1.0
+        self.epsilon = 0
 
     def __str__(self) -> str:
         return self.name
