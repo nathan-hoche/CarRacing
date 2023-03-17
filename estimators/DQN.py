@@ -2,13 +2,12 @@ import numpy as np
 import random
 import sys
 import importlib
-import math
 
 EPSILON_MIN = 0.05
 GAMMA = 0.95
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 EPSILON_DECAY = 0.99
-EPSILON_START = 0.9
+EPSILON_START = 0.25
 TAU = 0.005
 
 ############# UPDATE FUNC #############
@@ -19,7 +18,7 @@ def clearObservation(observation):
         for y in range(0, 94):
             obs[x][y] = observation[x][y].mean()
 
-    return obs.reshape(1, 1,94, 94)
+    return obs.reshape(1, 1, 94, 94)
 
 def dqnUpdate(brain, memory:list[dict], targetModel):
     model = brain.model
@@ -34,20 +33,23 @@ def dqnUpdate(brain, memory:list[dict], targetModel):
     minibatch = random.sample(memory, lim)
     train_state = []
     train_target = []
+    clearFunc = brain.clearObservation if hasattr(brain, "clearObservation") else clearObservation
+    shapeFunc = brain.reshapeObservation if hasattr(brain, "reshapeObservation") else (lambda x: (x, 1, 94, 94))
     for state, action, reward, next_state, done in minibatch:
-        target = model.predict(clearObservation(state), verbose=False)[0]
+        target = model.predict(clearFunc(state), verbose=False)[0]
         if done:
             target[action["index"]] = reward
         else:
-            target[action["index"]] = reward + GAMMA * np.amax(targetModel.predict(clearObservation(next_state), verbose=False)[0])
-        train_state.append(clearObservation(state))
+            target[action["index"]] = reward + GAMMA * np.amax(targetModel.predict(clearFunc(next_state), verbose=False)[0])
+        train_state.append(clearFunc(state))
         train_target.append(target)
         sys.stdout.write("-")
         sys.stdout.flush()
     sys.stdout.write("]\n")
-    model.fit(np.array(train_state).reshape(lim, 1, 94, 94), np.array(train_target), epochs=1, verbose=1)
+    model.fit(np.array(train_state).reshape(shapeFunc(lim)), np.array(train_target), epochs=1, verbose=1)
     if hasattr(brain, "epsilon") and brain.epsilon > EPSILON_MIN:
-        brain.epsilon = brain.epsilon * EPSILON_DECAY ** (len(memory) / 100)
+        #brain.epsilon = brain.epsilon * EPSILON_DECAY ** (len(memory) / 100)
+        brain.epsilon = brain.epsilon * EPSILON_DECAY
         print("Epsilon: ", brain.epsilon)
     return None
 
