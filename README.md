@@ -47,6 +47,7 @@ python saves/stats.py CSV_FILE
 | CNN |  |CNN.py |✅ | Nathan |
 | Fully Connected |  |FullyConnected.py |✅ | Gabriel |
 | Selective CNN |  |SelectiveCNN.py |✅ | Nathan |
+| Selective Fully Connected + Kmeans | |SelectiveKMNN.py |✅ | Gabriel |
 
 # Research Papers
 | Algorithm | Paper |
