@@ -5,12 +5,12 @@ from keras.optimizers import Adam
 import numpy as np
 
 def clearObservation(observation):
-    obs = np.zeros((94, 94))
-    for x in range(0, 94):
-        for y in range(0, 94):
+    obs = np.zeros((96, 96))
+    for x in range(0, 96):
+        for y in range(0, 96):
             obs[x][y] = observation[x][y].mean()
 
-    return obs.reshape(1, 1, 94, 94)
+    return obs.reshape(1, 1, 96, 96)
 
 class brain:
     def __init__(self, EstimatorName) -> None:
@@ -22,7 +22,7 @@ class brain:
         except:
             print("\n======> CREATE NEW MODEL\n")
             self.model = Sequential()
-            self.model.add(Flatten(input_shape=(1, 94, 94)))
+            self.model.add(Flatten(input_shape=(1, 96, 96)))
             self.model.add(Dense(32, activation='relu', name='dense1'))
             self.model.add(Dense(64, activation='sigmoid', name='dense2'))
             self.model.add(Dense(3, activation='sigmoid', name='dense3'))

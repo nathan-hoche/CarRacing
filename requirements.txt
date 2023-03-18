@@ -2,3 +2,4 @@ numpy
 keras
 gym >= 0.26.2
 neat-python
+sklearn >= 1.2.0

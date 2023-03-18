@@ -15,12 +15,12 @@ ACTION_SPACE = [
 ]
 
 def clearObservation(observation):
-    obs = np.zeros((94, 94))
-    for x in range(0, 94):
-        for y in range(0, 94):
+    obs = np.zeros((96, 96))
+    for x in range(0, 96):
+        for y in range(0, 96):
             obs[x][y] = observation[x][y].mean()
 
-    return obs.reshape(1, 1, 94, 94)
+    return obs.reshape(1, 1, 96, 96)
 
 class brain:
     def __init__(self, EstimatorName) -> None:
@@ -32,7 +32,7 @@ class brain:
         except:
             print("\n======> CREATE NEW MODEL\n")
             self.model = Sequential()
-            self.model.add(Conv2D(32, kernel_size=8, padding='same', input_shape=(1, 94, 94), activation='relu')) # Peut etre changer 1 pour le nombre de frame
+            self.model.add(Conv2D(32, kernel_size=8, padding='same', input_shape=(1, 96, 96), activation='relu')) # Peut etre changer 1 pour le nombre de frame
             self.model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
 
             self.model.add(Conv2D(64, kernel_size=5, padding='same', activation='relu'))
@@ -44,7 +44,7 @@ class brain:
             self.model.add(Dense(len(ACTION_SPACE), activation='softmax', name='dense3'))
             self.model.compile(loss='mean_squared_error', optimizer=Adam(lr=0.001, epsilon=1e-7), metrics=['accuracy'])
         self.model.summary()
-        self.epsilon = 1.0
+        self.epsilon = 0
 
     def __str__(self) -> str:
         return self.name

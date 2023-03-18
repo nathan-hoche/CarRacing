@@ -38,15 +38,31 @@ class stats():
         if self.df is None:
             print("Error: not in read mode")
             return None
+        plt.ion()
         fig, axs = plt.subplots(3, 1)
         fig.tight_layout(pad=1.2)
-        axs[0].plot(self.df["Max score"])
+        mGraph, = axs[0].plot(self.df["Max score"])
         axs[0].set_title("Max score")
-        axs[1].plot(self.df["Average score"])
+        aGraph, = axs[1].plot(self.df["Average score"])
         axs[1].set_title("Average score")
-        axs[2].plot(self.df["Last score"])
         axs[2].set_title("Last score")
-        plt.show()
+        lGraph, = axs[2].plot(self.df["Last score"])
+        stamp = os.stat(self.filename).st_mtime
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+        while (plt.fignum_exists(fig.number)):
+            if stamp != os.stat(self.filename).st_mtime:
+                stamp = os.stat(self.filename).st_mtime
+                self.df = pd.read_csv(self.filename, sep=";")
+                mGraph.set_xdata(range(0, len(self.df["Max score"])))
+                mGraph.set_ydata(self.df["Max score"])
+                aGraph.set_xdata(range(0, len(self.df["Average score"])))
+                aGraph.set_ydata(self.df["Average score"])
+                lGraph.set_xdata(range(0, len(self.df["Last score"])))
+                lGraph.set_ydata(self.df["Last score"])
+                fig.canvas.flush_events()
+                fig.canvas.draw()
+            plt.pause(0.05)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

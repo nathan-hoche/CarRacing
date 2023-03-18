@@ -10,7 +10,7 @@ from saves.stats import stats
 ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 
 # Actions: [steering, gas, brake] [{-1 ... 1}, {0 ... 1}, {0 ... 1}]
-# Observaton space: [[r, g, b] * 94] * 94] (RGB image)
+# Observaton space: [[r, g, b] * 96] * 96] (RGB image)
 
 PENALITY = 0.10
 LIMIT_NEGATIVE_STEP = 100
