@@ -1,4 +1,6 @@
 import gym
+# FOR GENERATE VIDEO
+# from gym.utils.save_video import save_video
 import sys
 import os
 import importlib
@@ -6,6 +8,8 @@ import importlib
 # For save the observation
 #from PIL import Image
 
+# FOR GENERATE VIDEO
+# ENV = gym.make("CarRacing-v2", render_mode="rgb_array_list")
 ENV = gym.make("CarRacing-v2", render_mode="human")
 
 # Actions: [steering, gas, brake] [{-1 ... 1}, {0 ... 1}, {0 ... 1}]
@@ -81,6 +85,8 @@ def main(brain, estimatorName, seed=None):
             nbNegatif = 0
         allScore.append(score)
         print("Score:", score)
+    # FOR GENERATE VIDEO
+    # save_video(ENV.render(), "saves/video/" + BRAIN.__str__() + '_' + estimatorName, fps=ENV.metadata["render_fps"])
 
     print("=====================================> END OF SIMULATION")
     averageScore = sum(allScore) / len(allScore)
