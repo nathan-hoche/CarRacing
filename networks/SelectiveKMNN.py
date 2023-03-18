@@ -37,7 +37,7 @@ class brain:
         for x in range(0, 94):
             for y in range(0, 94):
                 obs[x][y] = observation[x][y].mean()
-        return KMeans(n_clusters=3, random_state=0).fit_predict(obs).reshape(1, 1, 94)
+        return KMeans(n_clusters=3, random_state=0, n_init="auto").fit_predict(obs).reshape(1, 1, 94)
     
     def reshapeObservation(self, lim=1):
         return (lim, 1, 94)
