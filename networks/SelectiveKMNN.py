@@ -24,7 +24,7 @@ class brain:
         except:
             print("\n======> CREATE NEW MODEL\n")
             self.model = Sequential()
-            self.model.add(Flatten(input_shape=(1, 94)))
+            self.model.add(Flatten(input_shape=(1, 96)))
             self.model.add(Dense(128, activation='sigmoid', name='dense1'))
             self.model.add(Dense(32, activation='sigmoid', name='dense2'))
             self.model.add(Dense(len(ACTION_SPACE), activation='softmax', name='dense3'))
@@ -33,14 +33,14 @@ class brain:
         self.epsilon = 0
 
     def clearObservation(self, observation):
-        obs = np.zeros((94, 94))
-        for x in range(0, 94):
-            for y in range(0, 94):
+        obs = np.zeros((96, 96))
+        for x in range(0, 96):
+            for y in range(0, 96):
                 obs[x][y] = observation[x][y].mean()
-        return KMeans(n_clusters=3, random_state=0, n_init="auto").fit_predict(obs).reshape(1, 1, 94)
+        return KMeans(n_clusters=3, random_state=0, n_init="auto").fit_predict(obs).reshape(1, 1, 96)
     
     def reshapeObservation(self, lim=1):
-        return (lim, 1, 94)
+        return (lim, 1, 96)
 
     def __str__(self) -> str:
         return self.name

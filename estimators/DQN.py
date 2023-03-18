@@ -13,12 +13,12 @@ TAU = 0.005
 ############# UPDATE FUNC #############
 
 def clearObservation(observation):
-    obs = np.zeros((94, 94))
-    for x in range(0, 94):
-        for y in range(0, 94):
+    obs = np.zeros((96, 96))
+    for x in range(0, 96):
+        for y in range(0, 96):
             obs[x][y] = observation[x][y].mean()
 
-    return obs.reshape(1, 1, 94, 94)
+    return obs.reshape(1, 1, 96, 96)
 
 def dqnUpdate(brain, memory:list[dict], targetModel):
     model = brain.model
@@ -34,7 +34,7 @@ def dqnUpdate(brain, memory:list[dict], targetModel):
     train_state = []
     train_target = []
     clearFunc = brain.clearObservation if hasattr(brain, "clearObservation") else clearObservation
-    shapeFunc = brain.reshapeObservation if hasattr(brain, "reshapeObservation") else (lambda x: (x, 1, 94, 94))
+    shapeFunc = brain.reshapeObservation if hasattr(brain, "reshapeObservation") else (lambda x: (x, 1, 96, 96))
     for state, action, reward, next_state, done in minibatch:
         target = model.predict(clearFunc(state), verbose=False)[0]
         if done:
