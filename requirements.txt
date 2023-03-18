@@ -1,3 +1,4 @@
 numpy
 keras
 gym >= 0.26.2
+neat-python

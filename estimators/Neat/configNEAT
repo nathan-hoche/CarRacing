@@ -1,0 +1,62 @@
+[NEAT]
+fitness_criterion = max
+fitness_threshold = 900
+pop_size = 50
+reset_on_extinction = False
+
+[DefaultGenome]
+# node activation options
+activation_default = sigmoid
+activation_mutate_rate = 0.1
+activation_options = sigmoid
+
+# node aggregation options
+aggregation_default = sum
+aggregation_mutate_rate = 0.0
+aggregation_options = sum
+
+# node bias options
+bias_init_mean = 0.0
+bias_init_stdev = 1.0
+bias_max_value = 30.0
+bias_min_value = -30.0
+bias_mutate_power = 0.5
+bias_mutate_rate = 0.7
+bias_replace_rate = 0.1
+
+# connection add/remove rates
+conn_add_prob = 0.5
+conn_delete_prob = 0.5
+
+# connection enable options
+enabled_default = True
+enabled_mutate_rate = 0.01
+
+# feed-forward specific parameters
+feed_forward = True
+initial_connection = full_connected
+
+# node and connection gene compatibility thresholds
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient = 0.5
+
+# crossover settings
+interspecies_crossover_rate = 0.001
+mate_multipoint = False
+mate_multipoint_avg = False
+
+# mutation settings
+mutate_add_connection = 0.5
+mutate_add_node = 0.5
+mutate_delete_connection = 0.5
+mutate_delete_simple_neuron = 0.5
+mutate_replace_weight = 0.5
+mutate_replace_weight_power = 1.0
+mutate_toggle_enable = 0.5
+weight_init_mean = 0.0
+weight_init_stdev = 1.0
+weight_max_value = 30.0
+weight_min_value = -30.0
+weight_mutate_power = 0.5
+weight_mutate_rate = 0.8
+weight_replace_rate = 0.1
