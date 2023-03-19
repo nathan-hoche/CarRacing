@@ -122,19 +122,27 @@ def main(brain, estimator):
         if newWeight != None:
             BRAIN.train(newWeight)
 
+def help():
+    Bdir =  os.listdir(os.getcwd() + "/networks/")
+    Bdir = [x.replace(".py", "") for x in Bdir if x.endswith(".py")]
+    Edir =  os.listdir(os.getcwd() + "/estimators/")
+    Edir = [x.replace(".py", "") for x in Edir if x.endswith(".py")]
+    print("USAGE: python3 carRacing.py Brain Estimator")
+    print("EXAMPLE: python3 carRacing.py CNN Custom")
+    print("List of Brain:\n\t-", "\n\t- ".join(Bdir))
+    print("List of Estimator:\n\t-", "\n\t- ".join(Edir))
+
 
 if __name__ == "__main__":
     sys.argv.pop(0)
     if len(sys.argv) == 2:
-        main(sys.argv[0], sys.argv[1])
+        if (sys.argv[0] == "NEAT" or sys.argv[1] == "NEAT") and (sys.argv[0] != sys.argv[1]):
+            print("ERROR: NEAT need to be used with NEAT")
+            help()
+        else:
+            main(sys.argv[0], sys.argv[1])
     else:
-        Bdir =  os.listdir(os.getcwd() + "/networks/")
-        Bdir = [x.replace(".py", "") for x in Bdir if x.endswith(".py")]
-        Edir =  os.listdir(os.getcwd() + "/estimators/")
-        Edir = [x.replace(".py", "") for x in Edir if x.endswith(".py")]
         print("ERROR: Invalid number of arguments")
-        print("USAGE: python3 carRacing.py Brain Estimator")
-        print("EXAMPLE: python3 carRacing.py CNN Custom")
-        print("List of Brain:\n\t-", "\n\t- ".join(Bdir))
-        print("List of Estimator:\n\t-", "\n\t- ".join(Edir))
+        help()
+
     ENV.close()

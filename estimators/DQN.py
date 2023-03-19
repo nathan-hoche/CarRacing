@@ -81,12 +81,8 @@ class estimator:
             return
         self.memory.append((observation, step, reward, nextObservation, self.memoryPos))
         self.memoryPos += 1
-
-    def update(self, brain:object=None, score=None, check=False):
-        if check:
-            return
-        brain.save(score)
-
+    
+    def setup(self, brain:object=None):
         if not self.epsilonSetup and hasattr(brain, "epsilon"):
             self.epsilonSetup = True
             fd = importlib.import_module(brain.__str__())
@@ -94,7 +90,12 @@ class estimator:
             self.target.train(brain.getAllWeights())
             brain.epsilon = EPSILON_START
             print("CONFIG DONE")
+        
+
+    def update(self, brain:object=None, score=None, check=False):
+        if check:
             return
+        brain.save(score)
 
         #weights = brain.getAllWeights()
         # if score > self.bestScore:
