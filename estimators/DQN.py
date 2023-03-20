@@ -7,7 +7,7 @@ EPSILON_MIN = 0.05
 GAMMA = 0.95
 BATCH_SIZE = 128
 EPSILON_DECAY = 0.99
-EPSILON_START = 0.25
+EPSILON_START = 0.9
 TAU = 0.005
 
 ############# UPDATE FUNC #############
@@ -41,6 +41,10 @@ def dqnUpdate(brain, memory:list[dict], targetModel):
             target[action["index"]] = reward
         else:
             target[action["index"]] = reward + GAMMA * np.amax(targetModel.predict(clearFunc(next_state), verbose=False)[0])
+        # BE MORE COMPATIBLE WITH SOFTMAX
+        target[action["index"]] = 0 if target[action["index"]] < 0 else target[action["index"]]
+        target[action["index"]] = 1 if target[action["index"]] > 1 else target[action["index"]]
+        #################################
         train_state.append(clearFunc(state))
         train_target.append(target)
         sys.stdout.write("-")
@@ -72,6 +76,7 @@ class estimator:
         self.memoryPos = 0
         self.epsilonSetup = False
         self.target = None
+        self.downgradeCount = 0
 
     def __str__(self) -> str:
         return self.name
@@ -90,20 +95,22 @@ class estimator:
             self.target.train(brain.getAllWeights())
             brain.epsilon = EPSILON_START
             print("CONFIG DONE")
-        
 
     def update(self, brain:object=None, score=None, check=False):
         if check:
             return
-        brain.save(score)
+        
+        if score > self.bestScore:
+            self.bestScore = score
+            self.bestWeights = brain.getAllWeights()
+            brain.save(score)
+            self.downgradeCount = 0
+        elif self.downgradeCount > 10:
+            brain.train(self.bestWeights)
+            self.downgradeCount = 0
+        else:
+            self.downgradeCount += 1
 
-        #weights = brain.getAllWeights()
-        # if score > self.bestScore:
-        #     self.bestScore = score
-        #     self.bestWeights = weights
-        #     brain.save(score)
-        # else:
-        #     brain.train(self.bestWeights)
         returnValue = dqnUpdate(brain, self.memory, self.target.model)
 
         weights = brain.getAllWeights()
