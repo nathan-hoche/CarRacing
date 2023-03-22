@@ -52,11 +52,11 @@ class Memory:
         # Ensure inputShape does not have None values
         self.inputShape = tuple(x for x in inputShape if x is not None)
 
-        print("Memory input shape: ", self.inputShape)
+        # print("Memory input shape: ", self.inputShape)
         self.capacity = capacity
         self.memoryCounter = 0
         self.memory = np.zeros((self.capacity, *self.inputShape))
-        print("Memory shape: ", self.memory.shape)
+        # print("Memory shape: ", self.memory.shape)
         self.newMemory = np.zeros((self.capacity, *self.inputShape))
         self.actionMemory = np.zeros((self.capacity, actionsNumber))
         self.rewardMemory = np.zeros(self.capacity)
@@ -65,7 +65,7 @@ class Memory:
     def storeTransition(self, state, action, reward, newState, done):
         index = self.memoryCounter % self.capacity
 
-        print(f"Shape of state: {state.shape}")
+        # print(f"Shape of state: {state.shape}")
         self.memory[index] = state
         self.newMemory[index] = newState
         self.actionMemory[index] = action
@@ -107,13 +107,9 @@ class CriticNetwork(keras.Model):
         state = tf.reshape(state, (state.shape[0], -1))
         action = tf.reshape(action, (action.shape[0], -1))
 
-        print(f"State shape: {state.shape}")
-        print(f"Action shape: {action.shape}")
         ## Join state and action
         entry = np.concatenate((state, action), axis=1)
-        print(f"Entry shape: {entry.shape}")
 
-        self.model.summary()
         actionValue = self.model.layers[0](entry, training=True)
         for layer in self.model.layers[1:]:
             actionValue = layer(actionValue, training=True)
@@ -165,8 +161,6 @@ class estimator:
         self.targetActor = ActorNetwork(model=target_actor_model, name="targetActor")
         self.critic = CriticNetwork(model=critic_model, name="critic")
         self.targetCritic = CriticNetwork(model=target_critic_model, name="targetCritic")
-
-        return
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
@@ -239,15 +233,15 @@ class estimator:
         with tf.GradientTape() as tape:
             actions = self.actor(states)
             q_values = self.critic(states, actions)
-            actor_loss = -tf.reduce_mean(q_values)
-            actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
+            # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
+            actor_loss = -tf.reduce_mean(q_values + actions)
+        # Compute gradients
+        actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
 
-        print(f"actor_loss: {actor_loss}")
-        print(f"actor trainable variables: {self.actor.trainable_variables}")
-        print(f"actor_grads: {actor_grads}")
-        self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
+        #print(f"actor_grads: {actor_grads}")
+        if not None in actor_grads:
+            self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
         # Update target networks with soft update
         self.updateNetworkParameters()
-
-        return self.actor.model.get_weights()
+        return
