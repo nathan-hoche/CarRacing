@@ -31,17 +31,17 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
         print("ERROR: File", estimatorFile, "not found.")
         print(e)
         exit(0)
-    # try:
-    estimatorClassFd = estimatorFd.estimator()
-    #     print("Load: Class found. -> ", type(estimatorClassFd))
+    try:
+        estimatorClassFd = estimatorFd.estimator()
+        print("Load: Class found. -> ", type(estimatorClassFd))
         ####### Check if sample fonction is set
-    estimatorClassFd.update(check=True)
-    estimatorClassFd.memorize(check=True)
+        estimatorClassFd.update(check=True)
+        estimatorClassFd.memorize(check=True)
         #######################################
-    # except Exception as e:
-    #     print("ERROR: class/method crashed")
-    #     print(e)
-    #     exit(0)
+    except Exception as e:
+        print("ERROR: class/method crashed")
+        print(e)
+        exit(0)
     try:
         sys.path.append(os.getcwd() + "/networks/")
         networkFd = importlib.import_module(newtorkFile.replace(".py", ""))
