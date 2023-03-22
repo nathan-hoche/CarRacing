@@ -31,17 +31,17 @@ def loadBrain(newtorkFile: str, estimatorFile) -> object:
         print("ERROR: File", estimatorFile, "not found.")
         print(e)
         exit(0)
-    try:
-        estimatorClassFd = estimatorFd.estimator()
-        print("Load: Class found. -> ", type(estimatorClassFd))
+    # try:
+    estimatorClassFd = estimatorFd.estimator()
+    #     print("Load: Class found. -> ", type(estimatorClassFd))
         ####### Check if sample fonction is set
-        estimatorClassFd.update(check=True)
-        estimatorClassFd.memorize(check=True)
+    estimatorClassFd.update(check=True)
+    estimatorClassFd.memorize(check=True)
         #######################################
-    except Exception as e:
-        print("ERROR: class/method crashed")
-        print(e)
-        exit(0)
+    # except Exception as e:
+    #     print("ERROR: class/method crashed")
+    #     print(e)
+    #     exit(0)
     try:
         sys.path.append(os.getcwd() + "/networks/")
         networkFd = importlib.import_module(newtorkFile.replace(".py", ""))
@@ -135,8 +135,10 @@ def help():
 
 if __name__ == "__main__":
     sys.argv.pop(0)
-    if len(sys.argv) == 2:
-        if (sys.argv[0] == "NEAT" or sys.argv[1] == "NEAT") and (sys.argv[0] != sys.argv[1]):
+    if "-h" in sys.argv or "--help" in sys.argv:
+        help()
+    elif len(sys.argv) == 2:
+        if (sys.argv[0] == "NeatBrain" and sys.argv[1] != "NEAT") or (sys.argv[0] != "NeatBrain" and sys.argv[1] == "NEAT"):
             print("ERROR: NEAT need to be used with NEAT")
             help()
         else:
