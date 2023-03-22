@@ -19,12 +19,12 @@ def fullRandomWeights(narray):
 ############# UTILS #############
 
 def clearObservation(observation):
-    obs = np.zeros((94, 94))
-    for x in range(0, 94):
-        for y in range(0, 94):
+    obs = np.zeros((96, 96))
+    for x in range(0, 96):
+        for y in range(0, 96):
             obs[x][y] = observation[x][y].mean()
 
-    return obs.reshape(1, 1, 94, 94)
+    return obs.reshape(1, 96, 96)
 
 def convertToNumpy(arr):
     score = arr.pop("score")
@@ -65,10 +65,9 @@ class Memory:
     def storeTransition(self, state, action, reward, newState, done):
         index = self.memoryCounter % self.capacity
 
-        clearedState = clearObservation(state);
-        clearedNewState = clearObservation(newState);
-        self.memory[index] = clearedState
-        self.newMemory[index] = clearedNewState
+        print(f"Shape of state: {state.shape}")
+        self.memory[index] = state
+        self.newMemory[index] = newState
         self.actionMemory[index] = action
         self.rewardMemory[index] = reward
         self.terminalMemory[index] = done
@@ -93,22 +92,17 @@ class CriticNetwork(keras.Model):
 
         self.saveDir = saveDir
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
-        self.caca = False
 
-
-    def build(self, shape):
+        ## Critic Network with state and action as input
         self.model = keras.Sequential()
 
-        # Hidden layers
-        self.model.add(keras.layers.Dense(64, activation="relu", input_shape=shape))
+        self.model.add(keras.layers.Dense(64, activation="relu", input_shape=(64, 9219)))
         self.model.add(keras.layers.Dense(32, activation="relu"))
-        # Output layer
         self.model.add(keras.layers.Dense(1, activation="linear"))
-        self.model.build(shape)
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
-        self.built = True
 
-    def call(self, state, action):
+        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
+
+    def __call__(self, state, action):
         ## Flatten state and action
         state = tf.reshape(state, (state.shape[0], -1))
         action = tf.reshape(action, (action.shape[0], -1))
@@ -117,15 +111,12 @@ class CriticNetwork(keras.Model):
         print(f"Action shape: {action.shape}")
         ## Join state and action
         entry = np.concatenate((state, action), axis=1)
+        print(f"Entry shape: {entry.shape}")
 
-        ## Check if model is built
-        if (not self.caca):
-            print(f"Building model with shape {entry.shape}")
-            self.build(entry.shape)
         self.model.summary()
-        actionValue = self.model.layers[0](entry)
+        actionValue = self.model.layers[0](entry, training=True)
         for layer in self.model.layers[1:]:
-            actionValue = layer(actionValue)
+            actionValue = layer(actionValue, training=True)
 
         return actionValue
 
@@ -136,14 +127,16 @@ class ActorNetwork(keras.Model):
         self.saveDir = saveDir
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
 
-        # Get same model
-        self.model = model
+        # Create actor model from brain model
+        self.model = keras.Sequential()
+        for layer in model.layers:
+            self.model.add(layer)
         self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
 
-    def call(self, state):
-        actionValue = self.model.layers[0](state)
+    def __call__(self, state):
+        actionValue = self.model.layers[0](state, training=True)
         for layer in self.model.layers[1:]:
-            actionValue = layer(actionValue)
+            actionValue = layer(actionValue, training=True)
 
         return actionValue
 
@@ -178,7 +171,9 @@ class estimator:
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
             return
-        self.memory.storeTransition(observation, step, reward, nextObservation, False)
+        clearedObservation = clearObservation(observation)
+        clearedNextObservation = clearObservation(nextObservation)
+        self.memory.storeTransition(clearedObservation, step, reward, clearedNextObservation, False)
 
     def loadModels(self):
         print('Loading models...')
@@ -220,12 +215,13 @@ class estimator:
         # Sample a batch from the memory buffer
         states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
 
-        ## states = tf.convert_to_tensor(states, dtype=tf.float32)
-        ## actions = tf.convert_to_tensor(actions, dtype=tf.float32)
-        print(newStates.shape)
+        states = tf.convert_to_tensor(states, dtype=tf.float32)
+        actions = tf.convert_to_tensor(actions, dtype=tf.float32)
         rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
         newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
         dones = tf.convert_to_tensor(dones, dtype=tf.float32)
+
+        max_gradient_norm = 1.0
 
         # Update critic (Q-value function)
         with tf.GradientTape() as tape:
@@ -235,14 +231,21 @@ class estimator:
             q_values = self.critic(states, actions)
             critic_loss = tf.reduce_mean(tf.square(y - q_values))
         critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
+        # Clip gradients to prevent exploding gradients
+        critic_grads, _ = tf.clip_by_global_norm(critic_grads, max_gradient_norm)
         self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
 
         # Update actor (policy function)
-        # with tf.GradientTape() as tape:
-        #     new_actions = self.actor(states)
-        #     actor_loss = -tf.reduce_mean(self.critic(states, new_actions))
-        # actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
-        # self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
+        with tf.GradientTape() as tape:
+            actions = self.actor(states)
+            q_values = self.critic(states, actions)
+            actor_loss = -tf.reduce_mean(q_values)
+            actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
+
+        print(f"actor_loss: {actor_loss}")
+        print(f"actor trainable variables: {self.actor.trainable_variables}")
+        print(f"actor_grads: {actor_grads}")
+        self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
         # Update target networks with soft update
         self.updateNetworkParameters()
