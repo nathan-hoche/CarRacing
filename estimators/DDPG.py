@@ -123,10 +123,18 @@ class ActorNetwork(keras.Model):
         self.saveDir = saveDir
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
 
+        ## Random very small weights to prevent high, misleading values
+        kernelInitializer = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
+
         # Create actor model from brain model
         self.model = keras.Sequential()
         for layer in model.layers:
-            self.model.add(layer)
+            if layer == model.layers[-1]:
+                self.model.add(keras.layers.Dense(actionsNumber, model.layers[-1].activation, kernel_initializer=kernelInitializer))
+            else:
+                self.model.add(layer)
+
+
         self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
 
     def __call__(self, state):
@@ -143,7 +151,7 @@ class estimator:
         self.tau = 0.005
         self.batchSize = 64
         self.noise = 0.1
-        ## raise NotImplementedError(f"{self.name} is not implemented yet")
+        self.bestScore = 0
 
     def __str__(self) -> str:
         return self.name
@@ -248,14 +256,17 @@ class estimator:
             actions = self.actor(states)
             q_values = self.critic(states, actions)
             # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
-            actor_loss = -tf.reduce_mean(q_values + actions)
+            actor_loss = -tf.reduce_mean(q_values + 0.001 * tf.square(actions))
         # Compute gradients
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
 
-        #print(f"actor_grads: {actor_grads}")
+        # print(f"actor_grads: {actor_grads}")
         if not None in actor_grads:
             self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
 
         # Update target networks with soft update
         self.updateNetworkParameters()
+        if score > self.bestScore:
+            self.bestScore = score
+            brain.save(score)
         return self.getAllWeights()
