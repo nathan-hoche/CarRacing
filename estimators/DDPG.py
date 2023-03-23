@@ -228,6 +228,10 @@ class estimator:
         if self.memory.memoryCounter < self.batchSize:
             return
 
+        if score > self.bestScore:
+            self.bestScore = score
+            brain.save(score)
+
         # Sample a batch from the memory buffer
         states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
 
@@ -266,7 +270,4 @@ class estimator:
 
         # Update target networks with soft update
         self.updateNetworkParameters()
-        if score > self.bestScore:
-            self.bestScore = score
-            brain.save(score)
         return self.getAllWeights()
