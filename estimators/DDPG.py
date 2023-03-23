@@ -199,6 +199,20 @@ class estimator:
 
         return actions[0]
 
+    def getAllWeights(self):
+        res = {}
+
+        for layer in self.actor.model.layers:
+            ## Ignore layers without weights or biases as they are not trainable
+            if (not hasattr(layer, "get_weights") or not hasattr(layer, "get_biases")):
+                continue
+            res[layer.name] = {}
+            # Get current layer weights
+            res[layer.name]["weights"] = layer.get_weights()
+            ## Get current layer biases
+            res[layer.name]["biases"] = layer.get_biases()
+        return res
+
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
@@ -244,4 +258,4 @@ class estimator:
 
         # Update target networks with soft update
         self.updateNetworkParameters()
-        return
+        return self.getAllWeights()
