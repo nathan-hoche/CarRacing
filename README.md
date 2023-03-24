@@ -33,6 +33,7 @@ python saves/stats.py CSV_FILE
 | DDPG Algorithm |  |  |✅ |🚧 | Gabriel |
 | PPO Algorithm |  |  |✅ |🔴 | Hugo |
 | Actor Critic Method |  |  |✅ |🔴 | Hugo |
+| VPG Algorithm |  |  |✅ |🔴 | Maxime |
 | Q-learning or value-iteration methods |  |  |  |🔴 | |
 | Q-Learning |  |  |  | 🔴 | |
 
