@@ -87,11 +87,19 @@ class Memory:
         return states, actions, rewards, newStates, dones
 
 class CriticNetwork(keras.Model):
-    def __init__(self, model, name="critic", saveDir='tmp/ddpg'):
+    def __init__(self, model, name="critic", saveDir='saves/DDPG', learningRate=0.002):
         super(CriticNetwork, self).__init__(name=name)
 
         self.saveDir = saveDir
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
+
+        ## Load critic model
+        try:
+            self.model = keras.models.load_model(self.saveFile)
+            return
+        except:
+            pass
+
 
         ## Critic Network with state and action as input
         self.model = keras.Sequential()
@@ -100,7 +108,7 @@ class CriticNetwork(keras.Model):
         self.model.add(keras.layers.Dense(32, activation="relu"))
         self.model.add(keras.layers.Dense(1, activation="linear"))
 
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
+        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
 
     def __call__(self, state, action):
         ## Flatten state and action
@@ -117,11 +125,18 @@ class CriticNetwork(keras.Model):
         return actionValue
 
 class ActorNetwork(keras.Model):
-    def __init__(self, model, name="targetActor", saveDir='tmp/ddpg', actionsNumber=3):
+    def __init__(self, model, name="targetActor", saveDir='saves/DDPG', actionsNumber=3, learningRate=0.001):
         super(ActorNetwork, self).__init__(name=name)
 
         self.saveDir = saveDir
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
+
+        ## Load critic model
+        try:
+            self.model = keras.models.load_model(self.saveFile)
+            return
+        except:
+            pass
 
         ## Random very small weights to prevent high, misleading values
         kernelInitializer = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
@@ -135,7 +150,7 @@ class ActorNetwork(keras.Model):
                 self.model.add(layer)
 
 
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
+        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
 
     def __call__(self, state):
         actionValue = self.model.layers[0](state, training=True)
@@ -165,10 +180,10 @@ class estimator:
         critic_model = keras.models.clone_model(brain.model)
         target_critic_model = keras.models.clone_model(brain.model)
 
-        self.actor = ActorNetwork(model=actor_model, name="actor")
-        self.targetActor = ActorNetwork(model=target_actor_model, name="targetActor")
-        self.critic = CriticNetwork(model=critic_model, name="critic")
-        self.targetCritic = CriticNetwork(model=target_critic_model, name="targetCritic")
+        self.actor = ActorNetwork(model=actor_model, name=("actor" + "_" +  brain.name))
+        self.targetActor = ActorNetwork(model=target_actor_model, name=("targetActor" + "_" +  brain.name))
+        self.critic = CriticNetwork(model=critic_model, name=("critic" + "_" +  brain.name))
+        self.targetCritic = CriticNetwork(model=target_critic_model, name=("targetCritic" + "_" +  brain.name))
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
@@ -221,6 +236,12 @@ class estimator:
             res[layer.name]["biases"] = layer.get_biases()
         return res
 
+    def saveNetworks(self, score, brain: object):
+        self.targetActor.model.save(self.targetActor.saveFile)
+        self.critic.model.save(self.critic.saveFile)
+        self.targetCritic.model.save(self.targetCritic.saveFile)
+        brain.save(score)
+
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
@@ -230,7 +251,7 @@ class estimator:
 
         if score > self.bestScore:
             self.bestScore = score
-            brain.save(score)
+            self.saveNetworks(score, brain)
 
         # Sample a batch from the memory buffer
         states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
