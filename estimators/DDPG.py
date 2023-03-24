@@ -105,7 +105,8 @@ class CriticNetwork(keras.Model):
         self.model = keras.Sequential()
 
         self.model.add(keras.layers.Dense(64, activation="relu", input_shape=(64, 9219)))
-        self.model.add(keras.layers.Dense(32, activation="relu"))
+        self.model.add(keras.layers.Dense(256, activation="relu"))
+        self.model.add(keras.layers.Dense(256, activation="relu"))
         self.model.add(keras.layers.Dense(1, activation="linear"))
 
         self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
@@ -172,7 +173,8 @@ class estimator:
         return self.name
 
     def setup(self, brain: object):
-        self.memory = Memory(100, brain.model.input_shape, 3)
+        self.brain = brain
+        self.memory = Memory(100000, brain.model.input_shape, 3)
 
         # Clone the model before passing it to each network (to prevent reference issues)
         actor_model = keras.models.clone_model(brain.model)
@@ -191,6 +193,48 @@ class estimator:
         clearedObservation = clearObservation(observation)
         clearedNextObservation = clearObservation(nextObservation)
         self.memory.storeTransition(clearedObservation, step, reward, clearedNextObservation, False)
+        self.learn()
+
+    def learn(self):
+        if self.memory.memoryCounter < self.batchSize:
+            return
+
+        # Sample a batch from the memory buffer
+        states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
+
+        states = tf.convert_to_tensor(states, dtype=tf.float32)
+        actions = tf.convert_to_tensor(actions, dtype=tf.float32)
+        rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
+        newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
+        dones = tf.convert_to_tensor(dones, dtype=tf.float32)
+
+        # Update critic (Q-value function)
+        with tf.GradientTape() as tape:
+            target_actions = self.targetActor(newStates)
+            target_q_values = self.targetCritic(newStates, target_actions)
+            y = rewards + self.gamma * target_q_values
+            q_values = self.critic(states, actions)
+            critic_loss = tf.math.reduce_mean(tf.math.square(y - q_values))
+        critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
+        # Clip gradients to prevent exploding gradients
+        # critic_grads, _ = tf.clip_by_global_norm(critic_grads, max_gradient_norm)
+        self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
+
+        # Update actor (policy function)
+        with tf.GradientTape() as tape:
+            actions = self.actor(states)
+            q_values = self.critic(states, actions)
+            # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
+            actor_loss = -tf.math.reduce_mean(q_values + actions)
+        # Compute gradients
+        actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
+
+        if not None in actor_grads:
+            self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
+
+        # Update target networks with soft update
+        self.updateNetworkParameters()
+        self.brain.train(self.getAllWeights())
 
     def loadModels(self):
         print('Loading models...')
@@ -210,17 +254,6 @@ class estimator:
         for i, weight in enumerate(self.critic.model.weights):
             weights.append(weight * self.tau + targets[i]*(1-self.tau))
         self.targetCritic.model.set_weights(weights)
-
-    def chooseAction(self, observation, evaluate=False):
-        state = tf.convert_to_tensor([observation], dtype=tf.float32)
-        actions = self.actor(state)
-        if not evaluate:
-            actions += tf.random.normal(shape=[self.n_actions],
-                                        mean=0.0, stddev=self.noise)  # Add noise for exploration
-
-        actions = tf.clip_by_value(actions, -1, 1)
-
-        return actions[0]
 
     def getAllWeights(self):
         res = {}
@@ -246,49 +279,8 @@ class estimator:
         if check:
             return
 
-        if self.memory.memoryCounter < self.batchSize:
-            return
-
         if score > self.bestScore:
             self.bestScore = score
             self.saveNetworks(score, brain)
 
-        # Sample a batch from the memory buffer
-        states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
-
-        states = tf.convert_to_tensor(states, dtype=tf.float32)
-        actions = tf.convert_to_tensor(actions, dtype=tf.float32)
-        rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
-        newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
-        dones = tf.convert_to_tensor(dones, dtype=tf.float32)
-
-        max_gradient_norm = 1.0
-
-        # Update critic (Q-value function)
-        with tf.GradientTape() as tape:
-            target_actions = self.targetActor(newStates)
-            target_q_values = self.targetCritic(newStates, target_actions)
-            y = rewards + self.gamma * target_q_values * (1 - dones)
-            q_values = self.critic(states, actions)
-            critic_loss = tf.reduce_mean(tf.square(y - q_values))
-        critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
-        # Clip gradients to prevent exploding gradients
-        critic_grads, _ = tf.clip_by_global_norm(critic_grads, max_gradient_norm)
-        self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
-
-        # Update actor (policy function)
-        with tf.GradientTape() as tape:
-            actions = self.actor(states)
-            q_values = self.critic(states, actions)
-            # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
-            actor_loss = -tf.reduce_mean(q_values + 0.001 * tf.square(actions))
-        # Compute gradients
-        actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
-
-        # print(f"actor_grads: {actor_grads}")
-        if not None in actor_grads:
-            self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
-
-        # Update target networks with soft update
-        self.updateNetworkParameters()
         return self.getAllWeights()
