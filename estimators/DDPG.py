@@ -100,30 +100,24 @@ class CriticNetwork(keras.Model):
         except:
             pass
 
+        self.state_input = keras.layers.Input(shape=(1, 96, 96), name='state')
+        self.action_input = keras.layers.Input(shape=(3), name='action')
 
-        ## Critic Network with state and action as input
-        self.model = keras.Sequential()
+        self.flatten = keras.layers.Flatten()
+        self.concat = keras.layers.Concatenate()
 
-        self.model.add(keras.layers.Dense(64, activation="relu", input_shape=(64, 9219)))
-        self.model.add(keras.layers.Dense(256, activation="relu"))
-        self.model.add(keras.layers.Dense(256, activation="relu"))
-        self.model.add(keras.layers.Dense(1, activation="linear"))
+        self.dense1 = keras.layers.Dense(256, activation='relu')
+        self.dense2 = keras.layers.Dense(128, activation='relu')
+        self.dense3 = keras.layers.Dense(64, activation='relu')
+        self.q_value_output = keras.layers.Dense(1, activation=None, name='q_value')
+
+        self.model = keras.Model(inputs=[self.state_input, self.action_input], outputs=self.q_value_output(self.dense3(self.dense2(self.dense1(self.concat([self.flatten(self.state_input), self.action_input]))))))
 
         self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
 
-    def __call__(self, state, action):
-        ## Flatten state and action
-        state = tf.reshape(state, (state.shape[0], -1))
-        action = tf.reshape(action, (action.shape[0], -1))
-
-        ## Join state and action
-        entry = np.concatenate((state, action), axis=1)
-
-        actionValue = self.model.layers[0](entry, training=True)
-        for layer in self.model.layers[1:]:
-            actionValue = layer(actionValue, training=True)
-
-        return actionValue
+    def call(self, state, action):
+        q_value = self.model([state, action], training=True)
+        return q_value
 
 class ActorNetwork(keras.Model):
     def __init__(self, model, name="targetActor", saveDir='saves/DDPG', actionsNumber=3, learningRate=0.001):
@@ -140,7 +134,7 @@ class ActorNetwork(keras.Model):
             pass
 
         ## Random very small weights to prevent high, misleading values
-        kernelInitializer = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
+        kernelInitializer = keras.initializers.RandomUniform(minval=-0.000, maxval=0.003)
 
         # Create actor model from brain model
         self.model = keras.Sequential()
@@ -206,7 +200,6 @@ class estimator:
         actions = tf.convert_to_tensor(actions, dtype=tf.float32)
         rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
         newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
-        dones = tf.convert_to_tensor(dones, dtype=tf.float32)
 
         # Update critic (Q-value function)
         with tf.GradientTape() as tape:
@@ -225,7 +218,10 @@ class estimator:
             actions = self.actor(states)
             q_values = self.critic(states, actions)
             # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
-            actor_loss = -tf.math.reduce_mean(q_values + actions)
+            # But we don't want to update the actor with the actions, we want to update it with the gradients
+            ## Array of 0s of the same shape as actions
+            actions = tf.zeros_like(actions)
+            actor_loss = -tf.math.reduce_mean(q_values)
         # Compute gradients
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
 
