@@ -49,6 +49,29 @@ python saves/stats.py CSV_FILE
 | Selective CNN |  |SelectiveCNN.py |✅ | Nathan |
 | Selective Fully Connected + Kmeans | |SelectiveKMNN.py |✅ | Nathan |
 
+# Code architecture
+```mermaid
+flowchart TD
+    A[Start] --> B[Load Brain and Estimator \nfrom entry arguments]
+    B --> C{Save file\nexists ?}
+    C --> |Yes| D[Load weights into brain]
+    D --> E
+    C --> |No| E[Loop of all simulations]
+    E --> G[Simulation reset]
+    G --> J[Current simulation loop]
+    J --> K[Brain predicts next move]
+    K --> L[Estimator memorizes current\nmove and state if needed]
+    L --> M[Calculate current score\nfrom simulation]
+    M --> N{Simulation\ndone ?}
+    N --> |No| J
+    N --> |Yes| O{New best\nscore ?}
+    O --> |Yes| P[Save weights\nin file]
+    O --> |No| Q
+    P --> Q[Estimator updates brain's weights]
+    Q --> R[Brain trains its network\nwith new weights]
+    R --> E
+```
+
 # Research Papers
 | Algorithm | Paper |
 | --- | --- |
