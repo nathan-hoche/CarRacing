@@ -19,12 +19,12 @@ def fullRandomWeights(narray):
 ############# UTILS #############
 
 def clearObservation(observation):
-    obs = np.zeros((94, 94))
-    for x in range(0, 94):
-        for y in range(0, 94):
+    obs = np.zeros((96, 96))
+    for x in range(0, 96):
+        for y in range(0, 96):
             obs[x][y] = observation[x][y].mean()
 
-    return obs.reshape(1, 1, 94, 94)
+    return obs.reshape(1, 96, 96)
 
 def convertToNumpy(arr):
     score = arr.pop("score")
@@ -52,11 +52,11 @@ class Memory:
         # Ensure inputShape does not have None values
         self.inputShape = tuple(x for x in inputShape if x is not None)
 
-        print("Memory input shape: ", self.inputShape)
+        # print("Memory input shape: ", self.inputShape)
         self.capacity = capacity
         self.memoryCounter = 0
         self.memory = np.zeros((self.capacity, *self.inputShape))
-        print("Memory shape: ", self.memory.shape)
+        # print("Memory shape: ", self.memory.shape)
         self.newMemory = np.zeros((self.capacity, *self.inputShape))
         self.actionMemory = np.zeros((self.capacity, actionsNumber))
         self.rewardMemory = np.zeros(self.capacity)
@@ -65,10 +65,9 @@ class Memory:
     def storeTransition(self, state, action, reward, newState, done):
         index = self.memoryCounter % self.capacity
 
-        clearedState = clearObservation(state);
-        clearedNewState = clearObservation(newState);
-        self.memory[index] = clearedState
-        self.newMemory[index] = clearedNewState
+        # print(f"Shape of state: {state.shape}")
+        self.memory[index] = state
+        self.newMemory[index] = newState
         self.actionMemory[index] = action
         self.rewardMemory[index] = reward
         self.terminalMemory[index] = done
@@ -87,63 +86,77 @@ class Memory:
         return states, actions, rewards, newStates, dones
 
 class CriticNetwork(keras.Model):
-    def __init__(self, model, name="critic", saveDir='tmp/ddpg'):
+    def __init__(self, model, name="critic", saveDir='saves/DDPG', learningRate=0.002):
         super(CriticNetwork, self).__init__(name=name)
 
         self.saveDir = saveDir
         self.saveFile = self.saveDir +(1, 96, 96) + "/" + self.name + ".h5"
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
-        self.caca = False
+
+        ## Load critic model
+        try:
+            self.model = keras.models.load_model(self.saveFile)
+            return
+        except:
+            pass
 
 
-    def build(self, shape):
+        ## Critic Network with state and action as input
         self.model = keras.Sequential()
 
-        # Hidden layers
-        self.model.add(keras.layers.Dense(64, activation="relu", input_shape=shape))
-        self.model.add(keras.layers.Dense(32, activation="relu"))
-        # Output layer
+        self.model.add(keras.layers.Dense(64, activation="relu", input_shape=(64, 9219)))
+        self.model.add(keras.layers.Dense(256, activation="relu"))
+        self.model.add(keras.layers.Dense(256, activation="relu"))
         self.model.add(keras.layers.Dense(1, activation="linear"))
-        self.model.build(shape)
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
-        self.built = True
 
-    def call(self, state, action):
+        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
+
+    def __call__(self, state, action):
         ## Flatten state and action
         state = tf.reshape(state, (state.shape[0], -1))
         action = tf.reshape(action, (action.shape[0], -1))
 
-        print(f"State shape: {state.shape}")
-        print(f"Action shape: {action.shape}")
         ## Join state and action
         entry = np.concatenate((state, action), axis=1)
 
-        ## Check if model is built
-        if (not self.caca):
-            print(f"Building model with shape {entry.shape}")
-            self.build(entry.shape)
-        self.model.summary()
-        actionValue = self.model.layers[0](entry)
+        actionValue = self.model.layers[0](entry, training=True)
         for layer in self.model.layers[1:]:
-            actionValue = layer(actionValue)
+            actionValue = layer(actionValue, training=True)
 
         return actionValue
 
 class ActorNetwork(keras.Model):
-    def __init__(self, model, name="targetActor", saveDir='tmp/ddpg', actionsNumber=3):
+    def __init__(self, model, name="targetActor", saveDir='saves/DDPG', actionsNumber=3, learningRate=0.001):
         super(ActorNetwork, self).__init__(name=name)
 
         self.saveDir = saveDir
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
 
-        # Get same model
-        self.model = model
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse")
+        ## Load critic model
+        try:
+            self.model = keras.models.load_model(self.saveFile)
+            return
+        except:
+            pass
 
-    def call(self, state):
-        actionValue = self.model.layers[0](state)
+        ## Random very small weights to prevent high, misleading values
+        kernelInitializer = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
+
+        # Create actor model from brain model
+        self.model = keras.Sequential()
+        for layer in model.layers:
+            if layer == model.layers[-1]:
+                self.model.add(keras.layers.Dense(actionsNumber, model.layers[-1].activation, kernel_initializer=kernelInitializer))
+            else:
+                self.model.add(layer)
+
+
+        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
+
+    def __call__(self, state):
+        actionValue = self.model.layers[0](state, training=True)
         for layer in self.model.layers[1:]:
-            actionValue = layer(actionValue)
+            actionValue = layer(actionValue, training=True)
 
         return actionValue
 
@@ -154,13 +167,14 @@ class estimator:
         self.tau = 0.005
         self.batchSize = 64
         self.noise = 0.1
-        ## raise NotImplementedError(f"{self.name} is not implemented yet")
+        self.bestScore = 0
 
     def __str__(self) -> str:
         return self.name
 
     def setup(self, brain: object):
-        self.memory = Memory(100, brain.model.input_shape, 3)
+        self.brain = brain
+        self.memory = Memory(100000, brain.model.input_shape, 3)
 
         # Clone the model before passing it to each network (to prevent reference issues)
         actor_model = keras.models.clone_model(brain.model)
@@ -168,17 +182,59 @@ class estimator:
         critic_model = keras.models.clone_model(brain.model)
         target_critic_model = keras.models.clone_model(brain.model)
 
-        self.actor = ActorNetwork(model=actor_model, name="actor")
-        self.targetActor = ActorNetwork(model=target_actor_model, name="targetActor")
-        self.critic = CriticNetwork(model=critic_model, name="critic")
-        self.targetCritic = CriticNetwork(model=target_critic_model, name="targetCritic")
-
-        return
+        self.actor = ActorNetwork(model=actor_model, name=("actor" + "_" +  brain.name))
+        self.targetActor = ActorNetwork(model=target_actor_model, name=("targetActor" + "_" +  brain.name))
+        self.critic = CriticNetwork(model=critic_model, name=("critic" + "_" +  brain.name))
+        self.targetCritic = CriticNetwork(model=target_critic_model, name=("targetCritic" + "_" +  brain.name))
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
             return
-        self.memory.storeTransition(observation, step, reward, nextObservation, False)
+        clearedObservation = clearObservation(observation)
+        clearedNextObservation = clearObservation(nextObservation)
+        self.memory.storeTransition(clearedObservation, step, reward, clearedNextObservation, False)
+        self.learn()
+
+    def learn(self):
+        if self.memory.memoryCounter < self.batchSize:
+            return
+
+        # Sample a batch from the memory buffer
+        states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
+
+        states = tf.convert_to_tensor(states, dtype=tf.float32)
+        actions = tf.convert_to_tensor(actions, dtype=tf.float32)
+        rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
+        newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
+        dones = tf.convert_to_tensor(dones, dtype=tf.float32)
+
+        # Update critic (Q-value function)
+        with tf.GradientTape() as tape:
+            target_actions = self.targetActor(newStates)
+            target_q_values = self.targetCritic(newStates, target_actions)
+            y = rewards + self.gamma * target_q_values
+            q_values = self.critic(states, actions)
+            critic_loss = tf.math.reduce_mean(tf.math.square(y - q_values))
+        critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
+        # Clip gradients to prevent exploding gradients
+        # critic_grads, _ = tf.clip_by_global_norm(critic_grads, max_gradient_norm)
+        self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
+
+        # Update actor (policy function)
+        with tf.GradientTape() as tape:
+            actions = self.actor(states)
+            q_values = self.critic(states, actions)
+            # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
+            actor_loss = -tf.math.reduce_mean(q_values + actions)
+        # Compute gradients
+        actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
+
+        if not None in actor_grads:
+            self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
+
+        # Update target networks with soft update
+        self.updateNetworkParameters()
+        self.brain.train(self.getAllWeights())
 
     def loadModels(self):
         print('Loading models...')
@@ -199,52 +255,32 @@ class estimator:
             weights.append(weight * self.tau + targets[i]*(1-self.tau))
         self.targetCritic.model.set_weights(weights)
 
-    def chooseAction(self, observation, evaluate=False):
-        state = tf.convert_to_tensor([observation], dtype=tf.float32)
-        actions = self.actor(state)
-        if not evaluate:
-            actions += tf.random.normal(shape=[self.n_actions],
-                                        mean=0.0, stddev=self.noise)  # Add noise for exploration
+    def getAllWeights(self):
+        res = {}
 
-        actions = tf.clip_by_value(actions, -1, 1)
+        for layer in self.actor.model.layers:
+            ## Ignore layers without weights or biases as they are not trainable
+            if (not hasattr(layer, "get_weights") or not hasattr(layer, "get_biases")):
+                continue
+            res[layer.name] = {}
+            # Get current layer weights
+            res[layer.name]["weights"] = layer.get_weights()
+            ## Get current layer biases
+            res[layer.name]["biases"] = layer.get_biases()
+        return res
 
-        return actions[0]
+    def saveNetworks(self, score, brain: object):
+        self.targetActor.model.save(self.targetActor.saveFile)
+        self.critic.model.save(self.critic.saveFile)
+        self.targetCritic.model.save(self.targetCritic.saveFile)
+        brain.save(score)
 
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
 
-        if self.memory.memoryCounter < self.batchSize:
-            return
+        if score > self.bestScore:
+            self.bestScore = score
+            self.saveNetworks(score, brain)
 
-        # Sample a batch from the memory buffer
-        states, actions, rewards, newStates, dones = self.memory.sampleBuffer(self.batchSize)
-
-        ## states = tf.convert_to_tensor(states, dtype=tf.float32)
-        ## actions = tf.convert_to_tensor(actions, dtype=tf.float32)
-        print(newStates.shape)
-        rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
-        newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
-        dones = tf.convert_to_tensor(dones, dtype=tf.float32)
-
-        # Update critic (Q-value function)
-        with tf.GradientTape() as tape:
-            target_actions = self.targetActor(newStates)
-            target_q_values = self.targetCritic(newStates, target_actions)
-            y = rewards + self.gamma * target_q_values * (1 - dones)
-            q_values = self.critic(states, actions)
-            critic_loss = tf.reduce_mean(tf.square(y - q_values))
-        critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
-        self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
-
-        # Update actor (policy function)
-        # with tf.GradientTape() as tape:
-        #     new_actions = self.actor(states)
-        #     actor_loss = -tf.reduce_mean(self.critic(states, new_actions))
-        # actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
-        # self.actor.model.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
-
-        # Update target networks with soft update
-        self.updateNetworkParameters()
-
-        return self.actor.model.get_weights()
+        return self.getAllWeights()

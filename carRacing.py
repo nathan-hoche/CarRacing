@@ -138,8 +138,10 @@ def help():
 
 if __name__ == "__main__":
     sys.argv.pop(0)
-    if len(sys.argv) == 2:
-        if (sys.argv[0] == "NEAT" or sys.argv[1] == "NEAT") and (sys.argv[0] != sys.argv[1]):
+    if "-h" in sys.argv or "--help" in sys.argv:
+        help()
+    elif len(sys.argv) == 2:
+        if (sys.argv[0] == "NeatBrain" and sys.argv[1] != "NEAT") or (sys.argv[0] != "NeatBrain" and sys.argv[1] == "NEAT"):
             print("ERROR: NEAT need to be used with NEAT")
             help()
         else:
