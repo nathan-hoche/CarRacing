@@ -71,7 +71,6 @@ class Memory:
         self.actionMemory[index] = action
         self.rewardMemory[index] = reward
         self.terminalMemory[index] = done
-
         self.memoryCounter += 1
 
     def sampleBuffer(self, batchSize):
@@ -91,6 +90,7 @@ class CriticNetwork(keras.Model):
         super(CriticNetwork, self).__init__(name=name)
 
         self.saveDir = saveDir
+        self.saveFile = self.saveDir +(1, 96, 96) + "/" + self.name + ".h5"
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
 
         ## Load critic model
