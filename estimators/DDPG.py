@@ -219,8 +219,6 @@ class estimator:
             q_values = self.critic(states, actions)
             # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
             # But we don't want to update the actor with the actions, we want to update it with the gradients
-            ## Array of 0s of the same shape as actions
-            actions = tf.zeros_like(actions)
             actor_loss = -tf.math.reduce_mean(q_values)
         # Compute gradients
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
