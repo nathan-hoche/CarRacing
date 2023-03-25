@@ -3,6 +3,8 @@ import keras
 import tensorflow as tf
 import json
 import sys
+import pickle
+import os
 
 ############# UTILS #############
 
@@ -36,19 +38,23 @@ def formatWeights(weights:dict) -> list:
 ############# CLASS #############
 
 class Memory:
-    def __init__(self, capacity, inputShape, actionsNumber):
+    def __init__(self, capacity, inputShape, actionsNumber, filePath=None):
         # Ensure inputShape does not have None values
         self.inputShape = tuple(x for x in inputShape if x is not None)
+        self.filePath = filePath
 
-        # print("Memory input shape: ", self.inputShape)
-        self.capacity = capacity
-        self.memoryCounter = 0
-        self.memory = np.zeros((self.capacity, *self.inputShape))
-        # print("Memory shape: ", self.memory.shape)
-        self.newMemory = np.zeros((self.capacity, *self.inputShape))
-        self.actionMemory = np.zeros((self.capacity, actionsNumber))
-        self.rewardMemory = np.zeros(self.capacity)
-        self.terminalMemory = np.zeros(self.capacity)
+        if filePath and os.path.isfile(filePath):
+            self.load_memory(filePath)
+        else:
+            # print("Memory input shape: ", self.inputShape)
+            self.capacity = capacity
+            self.memoryCounter = 0
+            self.memory = np.zeros((self.capacity, *self.inputShape))
+            # print("Memory shape: ", self.memory.shape)
+            self.newMemory = np.zeros((self.capacity, *self.inputShape))
+            self.actionMemory = np.zeros((self.capacity, actionsNumber))
+            self.rewardMemory = np.zeros(self.capacity)
+            self.terminalMemory = np.zeros(self.capacity)
 
     def storeTransition(self, state, action, reward, newState, done):
         index = self.memoryCounter % self.capacity
@@ -72,6 +78,32 @@ class Memory:
         dones = self.terminalMemory[batch]
 
         return states, actions, rewards, newStates, dones
+
+    def saveMemory(self):
+        if not self.filePath:
+            return
+        with open(self.filePath, 'wb') as file:
+            data = {
+                'memoryCounter': self.memoryCounter,
+                'memory': self.memory,
+                'newMemory': self.newMemory,
+                'actionMemory': self.actionMemory,
+                'rewardMemory': self.rewardMemory,
+                'terminalMemory': self.terminalMemory
+            }
+            pickle.dump(data, file)
+
+    def loadMemory(self):
+        if not self.filePath:
+            return
+        with open(self.filePath, 'rb') as file:
+            data = pickle.load(file)
+            self.memoryCounter = data['memoryCounter']
+            self.memory = data['memory']
+            self.newMemory = data['newMemory']
+            self.actionMemory = data['actionMemory']
+            self.rewardMemory = data['rewardMemory']
+            self.terminalMemory = data['terminalMemory']
 
 class CriticNetwork(keras.Model):
     def __init__(self, model=None, name="critic", saveDir='saves/DDPG', learningRate=0.002):
@@ -152,13 +184,14 @@ class estimator:
         self.batchSize = 128
         self.noise = 0.1
         self.bestScore = 0
+        self.currentSimulation = 0
 
     def __str__(self) -> str:
         return self.name
 
     def setup(self, brain: object):
         self.brain = brain
-        self.memory = Memory(100000, brain.model.input_shape, 3)
+        self.memory = Memory(100000, brain.model.input_shape, 3, filePath="saves/DDPG/memory.pickle")
 
         self.actor = ActorNetwork(model=brain.model, name=("actor" + "_" +  brain.name))
         self.targetActor = ActorNetwork(model=self.actor.model, name=("targetActor" + "_" +  brain.name))
@@ -251,7 +284,13 @@ class estimator:
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
+        self.currentSimulation += 1
 
+        ## Save memory every 100 simulations
+        if self.currentSimulation % 100 == 0:
+            self.memory.saveMemory()
+
+        ## Save best network
         if score > self.bestScore:
             self.bestScore = score
             self.saveNetworks(score, brain)
