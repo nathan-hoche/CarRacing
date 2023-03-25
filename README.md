@@ -29,9 +29,9 @@ python saves/stats.py CSV_FILE
 | --- | --- | --- | --- | --- | --- |
 | Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
 | Deep Q Neural Network (DQN) |  |DQN.py |✅ |🔧 | Nathan |
-| Neat Algorithm |  |  |✅ | 🚧 | Tom |
-| DDPG Algorithm |  |  |✅ |🚧 | Gabriel |
-| PPO Algorithm |  |  |✅ |🔴 | Hugo |
+| Neat Algorithm |  |NEAT.py  |✅ | 🚧 | Tom |
+| DDPG Algorithm |  |DDPG.py  |✅ |🔧 | Gabriel |
+| PPO Algorithm |  |PPO.py  |✅ |🔴 | Hugo |
 | Actor Critic Method |  |  |✅ |🔴 | Hugo |
 | VPG Algorithm |  |  |✅ |🔴 | Maxime |
 | Q-learning or value-iteration methods |  |  |  |🔴 | |
