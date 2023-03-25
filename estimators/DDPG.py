@@ -130,7 +130,7 @@ class CriticNetwork(keras.Model):
             self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
             return
 
-        kernelInitializer = keras.initializers.RandomUniform(minval=-0.000, maxval=0.003)
+        kernelInitializer = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
 
         self.state_input = keras.layers.Input(shape=(1, 96, 96), name='state')
         self.action_input = keras.layers.Input(shape=(3), name='action')
@@ -139,7 +139,7 @@ class CriticNetwork(keras.Model):
         self.concat = keras.layers.Concatenate()
 
         self.dense1 = keras.layers.Dense(256, activation='relu')
-        self.dense2 = keras.layers.Dense(128, activation='relu')
+        self.dense2 = keras.layers.Dense(256, activation='relu')
         self.dense3 = keras.layers.Dense(64, activation='relu')
         self.q_value_output = keras.layers.Dense(1, activation=None, name='q_value', kernel_initializer=kernelInitializer)
 
@@ -166,7 +166,7 @@ class ActorNetwork(keras.Model):
             pass
 
         ## Random very small weights to prevent high, misleading values
-        kernelInitializer = keras.initializers.RandomUniform(minval=-0.000, maxval=0.003)
+        kernelInitializer = keras.initializers.RandomUniform(minval=-0.003, maxval=0.003)
 
         # Create actor model from brain model
         self.model = keras.Sequential()
