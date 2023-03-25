@@ -86,11 +86,10 @@ class Memory:
         return states, actions, rewards, newStates, dones
 
 class CriticNetwork(keras.Model):
-    def __init__(self, model, name="critic", saveDir='saves/DDPG', learningRate=0.002):
+    def __init__(self, model=None, name="critic", saveDir='saves/DDPG', learningRate=0.002):
         super(CriticNetwork, self).__init__(name=name)
 
         self.saveDir = saveDir
-        self.saveFile = self.saveDir +(1, 96, 96) + "/" + self.name + ".h5"
         self.saveFile = self.saveDir + "/" + self.name + ".h5"
 
         ## Load critic model
@@ -99,6 +98,13 @@ class CriticNetwork(keras.Model):
             return
         except:
             pass
+
+        if model is not None:
+            self.model = keras.models.clone_model(model)
+            self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
+            return
+
+        kernelInitializer = keras.initializers.RandomUniform(minval=-0.000, maxval=0.003)
 
         self.state_input = keras.layers.Input(shape=(1, 96, 96), name='state')
         self.action_input = keras.layers.Input(shape=(3), name='action')
@@ -109,7 +115,7 @@ class CriticNetwork(keras.Model):
         self.dense1 = keras.layers.Dense(256, activation='relu')
         self.dense2 = keras.layers.Dense(128, activation='relu')
         self.dense3 = keras.layers.Dense(64, activation='relu')
-        self.q_value_output = keras.layers.Dense(1, activation=None, name='q_value')
+        self.q_value_output = keras.layers.Dense(1, activation=None, name='q_value', kernel_initializer=kernelInitializer)
 
         self.model = keras.Model(inputs=[self.state_input, self.action_input], outputs=self.q_value_output(self.dense3(self.dense2(self.dense1(self.concat([self.flatten(self.state_input), self.action_input]))))))
 
@@ -170,16 +176,10 @@ class estimator:
         self.brain = brain
         self.memory = Memory(100000, brain.model.input_shape, 3)
 
-        # Clone the model before passing it to each network (to prevent reference issues)
-        actor_model = keras.models.clone_model(brain.model)
-        target_actor_model = keras.models.clone_model(brain.model)
-        critic_model = keras.models.clone_model(brain.model)
-        target_critic_model = keras.models.clone_model(brain.model)
-
-        self.actor = ActorNetwork(model=actor_model, name=("actor" + "_" +  brain.name))
-        self.targetActor = ActorNetwork(model=target_actor_model, name=("targetActor" + "_" +  brain.name))
-        self.critic = CriticNetwork(model=critic_model, name=("critic" + "_" +  brain.name))
-        self.targetCritic = CriticNetwork(model=target_critic_model, name=("targetCritic" + "_" +  brain.name))
+        self.actor = ActorNetwork(model=brain.model, name=("actor" + "_" +  brain.name))
+        self.targetActor = ActorNetwork(model=self.actor.model, name=("targetActor" + "_" +  brain.name))
+        self.critic = CriticNetwork(name=("critic" + "_" +  brain.name))
+        self.targetCritic = CriticNetwork(model=self.critic.model, name=("targetCritic" + "_" +  brain.name))
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
@@ -199,6 +199,7 @@ class estimator:
         states = tf.convert_to_tensor(states, dtype=tf.float32)
         actions = tf.convert_to_tensor(actions, dtype=tf.float32)
         rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
+        rewards = tf.cast(rewards, tf.float32)
         newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
 
         # Update critic (Q-value function)
@@ -215,8 +216,7 @@ class estimator:
 
         # Update actor (policy function)
         with tf.GradientTape() as tape:
-            actions = self.actor(states)
-            q_values = self.critic(states, actions)
+            q_values = self.critic(states, self.actor(states))
             # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
             # But we don't want to update the actor with the actions, we want to update it with the gradients
             actor_loss = -tf.math.reduce_mean(q_values)
