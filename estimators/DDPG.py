@@ -82,16 +82,22 @@ class Memory:
     def saveMemory(self):
         if not self.filePath:
             return
-        with open(self.filePath, 'wb') as file:
-            data = {
-                'memoryCounter': self.memoryCounter,
-                'memory': self.memory,
-                'newMemory': self.newMemory,
-                'actionMemory': self.actionMemory,
-                'rewardMemory': self.rewardMemory,
-                'terminalMemory': self.terminalMemory
-            }
-            pickle.dump(data, file)
+        # Create the directory if it does not exist
+        directory = os.path.dirname(self.filePath)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        # Save only up to the memoryCounter index
+        memory_end = min(self.memoryCounter, self.capacity)
+        np.savez_compressed(
+            self.filePath,
+            memory=self.memory[:memory_end],
+            newMemory=self.newMemory[:memory_end],
+            actionMemory=self.actionMemory[:memory_end],
+            rewardMemory=self.rewardMemory[:memory_end],
+            terminalMemory=self.terminalMemory[:memory_end],
+            memoryCounter=self.memoryCounter
+        )
 
     def loadMemory(self):
         if not self.filePath:
