@@ -4,18 +4,6 @@ import tensorflow as tf
 import json
 import sys
 
-############# UPDATE FUNC #############
-
-def randomUpdate(narray):
-    return narray + np.random.uniform(-0.1, 0.1, narray.shape)
-
-def randomChoiceWeights(narray):
-    return np.random.choice(narray.reshape(narray.size), narray.size).reshape(narray.shape)
-
-def fullRandomWeights(narray):
-    return np.random.uniform(-1, 1, narray.size).reshape(narray.shape)
-
-
 ############# UTILS #############
 
 def clearObservation(observation):
@@ -154,18 +142,14 @@ class ActorNetwork(keras.Model):
         self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=learningRate), loss="mse")
 
     def __call__(self, state):
-        actionValue = self.model.layers[0](state, training=True)
-        for layer in self.model.layers[1:]:
-            actionValue = layer(actionValue, training=True)
-
-        return actionValue
+        return self.model(state, training=True)
 
 class estimator:
     def __init__(self) -> None:
         self.name = "DDPG"
         self.gamma = 0.99
         self.tau = 0.005
-        self.batchSize = 64
+        self.batchSize = 128
         self.noise = 0.1
         self.bestScore = 0
 
@@ -184,10 +168,10 @@ class estimator:
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
             return
+        reward *= 10
         clearedObservation = clearObservation(observation)
         clearedNextObservation = clearObservation(nextObservation)
         self.memory.storeTransition(clearedObservation, step, reward, clearedNextObservation, False)
-        self.learn()
 
     def learn(self):
         if self.memory.memoryCounter < self.batchSize:
@@ -201,25 +185,20 @@ class estimator:
         rewards = tf.convert_to_tensor(rewards, dtype=tf.float32)
         rewards = tf.cast(rewards, tf.float32)
         newStates = tf.convert_to_tensor(newStates, dtype=tf.float32)
+        dones = tf.convert_to_tensor(dones, dtype=tf.float32)
 
         # Update critic (Q-value function)
         with tf.GradientTape() as tape:
             target_actions = self.targetActor(newStates)
-            target_q_values = self.targetCritic(newStates, target_actions)
-            y = rewards + self.gamma * target_q_values
-            q_values = self.critic(states, actions)
-            critic_loss = tf.math.reduce_mean(tf.math.square(y - q_values))
+            y = rewards + self.gamma * self.targetCritic(newStates, target_actions) * (1 - dones)
+            critic_loss = tf.math.reduce_mean(tf.math.square(y - self.critic(states, actions)))
         critic_grads = tape.gradient(critic_loss, self.critic.trainable_variables)
-        # Clip gradients to prevent exploding gradients
-        # critic_grads, _ = tf.clip_by_global_norm(critic_grads, max_gradient_norm)
         self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
 
         # Update actor (policy function)
         with tf.GradientTape() as tape:
             q_values = self.critic(states, self.actor(states))
-            # For doing the tape.gradient, we need to use actions in the calcuation of the actor loss
-            # But we don't want to update the actor with the actions, we want to update it with the gradients
-            actor_loss = -tf.math.reduce_mean(q_values)
+            actor_loss = -tf.math.reduce_mean(q_values) # Maximize Q-value
         # Compute gradients
         actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
 
@@ -276,5 +255,9 @@ class estimator:
         if score > self.bestScore:
             self.bestScore = score
             self.saveNetworks(score, brain)
+
+        ## Set last memory state to done
+        self.memory.terminalMemory[-1] = True
+        self.learn()
 
         return self.getAllWeights()
