@@ -6,10 +6,11 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D
+from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, Concatenate
 import keras
 import torch
 from torch.distributions import MultivariateNormal
+import tensorflow_probability as tfp
 
 ############# HYPERPARAMETER #############
 
@@ -22,16 +23,23 @@ n_updates_per_iteration = 5
 
 
 def get_model_critic():
-    state_input = keras.Input(shape=(1, 96, 96), dtype=tf.float32)
-    # Classification block
-    x = Flatten(name='flatten')(state_input)
-    x = Dense(1024, activation='relu', name='fc1')(x)
-    out_actions = Dense(1, activation='linear')(x)
-  
-    # Define model
-    model = keras.Model(inputs=[state_input], outputs=[out_actions])
-    model.compile(optimizer=keras.optimizers.Adam(lr=1e-4), loss='mse')
-    
+    state_input = keras.Input(shape=(1, 96, 96))
+    action_input = keras.Input(shape=(3))
+
+    state_input = keras.layers.Input(shape=(1, 96, 96), name='state')
+    action_input = keras.layers.Input(shape=(3), name='action')
+
+    flatten = keras.layers.Flatten()
+    concat = keras.layers.Concatenate()
+
+    dense1 = keras.layers.Dense(256, activation='relu')
+    dense2 = keras.layers.Dense(128, activation='relu')
+    dense3 = keras.layers.Dense(64, activation='relu')
+    q_value_output = keras.layers.Dense(1, activation=None, name='q_value')
+
+    model = keras.Model(inputs=[state_input, action_input], outputs=q_value_output(dense3(dense2(dense1(concat([flatten(state_input), action_input]))))))
+
+    model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr), loss="mse")
     return model
 
 def clearObservation(observation):
@@ -53,12 +61,6 @@ class Buffer:
         self.buffer_logprob = []
         self.buffer_reward = []
         self.buffer_rtgs = []
-        self.buffer_lens = []
-        self.ep_rews = []
-        self.size = 0
-        return 
-
-    def store(self, observation, reward, actor, critic):
         return 
 
 
@@ -77,9 +79,6 @@ class Buffer:
         return buffer_rtgs
     
     def reshape_data(self):
-        #self.buffer_obs = torch.tensor(self.buffer_obs, dtype=torch.float)
-        #self.buffer_action = torch.tensor(self.buffer_action, dtype=torch.float)
-        #self.buffer_logprob = torch.tensor(self.buffer_logprob, dtype=torch.float)
         self.buffer_rtgs = self.compute_rtgs(self.buffer_reward)   
         return (self.buffer_obs, self.buffer_action, self.buffer_logprob, self.buffer_rtgs)
 
@@ -105,19 +104,17 @@ class estimator:
         #self.critic_optim = keras.optimizers.Adam(self.critic.trainable_weights, lr=lr)
 
         # Initialize the covariance matrix used to query the actor for actions
-        self.cov_var = torch.full(size=(3,), fill_value=0.5)
-        self.cov_mat = torch.diag(self.cov_var)
+        cov_var = np.full((3,), fill_value=0.5)
+        cov_mat = np.diag(cov_var)
+        self.cov_mat_32 = tf.cast(tf.constant(cov_mat), dtype=tf.float32)
         return
     
         
     def get_logprob(self, action):
-        action_torch = torch.tensor(action, dtype=torch.float32)
-
-        dist = MultivariateNormal(action_torch, self.cov_mat)
-
+        dist = tfp.distributions.MultivariateNormalFullCovariance(loc=action, covariance_matrix=self.cov_mat_32)
         # Calculate the log probability for that action
-        log_prob = dist.log_prob(action_torch)
-        return log_prob.detach()
+        log_prob = dist.log_prob(action)
+        return log_prob
 
 
     def memorize(self, observation=None, action=None, reward=None, nextObservation=None, check=False):
@@ -133,18 +130,12 @@ class estimator:
         self.buffer.buffer_reward.append(reward)
         self.buffer.buffer_action.append(action)
         self.buffer.buffer_logprob.append(log_prob)
-        self.buffer.size += 1
 
 
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
         (buffer_obs, buffer_action, buffer_logprob, buffer_rtgs) = self.buffer.reshape_data()
-        print("Updated")
-        #print("shape of buffer_obs: ", self.buffer.buffer_obs.shape)
-        #print("shape of buffer_action: ", self.buffer.buffer_action.shape)
-        #print("shape of buffer_logprob: ", self.buffer.buffer_logprob.shape)
-        print("shape of buffer_rtgs: ", self.buffer.buffer_rtgs.shape)
 
         # Calculate advantage at k-th iteration
         V = self.evaluate(buffer_obs)
@@ -156,11 +147,19 @@ class estimator:
 		# solving some environments was too unstable without it.
         
         A_k = (A_k - A_k.mean()) / (A_k.std() + 1e-10)
-        print("V ===== ", V)
-        print("A_k ===== ", A_k)
 
         for _ in range(n_updates_per_iteration): 
             
+            #V, curr_log_probs = self.evaluate_all(buffer_obs, buffer_action)
+            # Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
+            #ratios = np.exp(np.array(curr_log_probs, dtype=np.float32) - np.array(buffer_logprob, dtype=np.float32))
+
+            # Calculate surrogate losses.
+            #surr1 = ratios * np.array(A_k, dtype=np.float32)
+            #surr2 = np.clip(ratios, 1 - clip, 1 + clip) * np.array(A_k, dtype=np.float32)
+            #actor_loss = -np.mean(np.minimum(surr1, surr2))
+
+
             #print("actor_loss ===== ", actor_loss)
             #critic_loss = torch.nn.MSELoss()(V, buffer_rtgs)
             #print("critic_loss ===== ", critic_loss)
@@ -171,23 +170,23 @@ class estimator:
             #self.critic.model.optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
             # Calculate gradients and perform backward propagation for critic network
 
-            with tf.GradientTape(persistent=True) as tape:
-                V, curr_log_probs = self.evaluate_all(buffer_obs, buffer_action)
-                delta = self.actor.trainable_variables
-                # Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
-                ratios = np.exp(np.array(curr_log_probs, dtype=np.float32) - np.array(buffer_logprob, dtype=np.float32))
-
-                # Calculate surrogate losses.
-                surr1 = ratios * np.array(A_k, dtype=np.float32)
-                surr2 = np.clip(ratios, 1 - clip, 1 + clip) * np.array(A_k, dtype=np.float32)
+            with tf.GradientTape() as tape:
+                curr_log_probs = []
+                for obs, acts in zip(buffer_obs, buffer_action):
+                    # Calculate the log probabilities of batch actions using most recent actor network.
+                    # This segment of code is similar to that in get_action()
+                    mean = np.asarray(self.actor(obs))
+                    dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat_32)
+                    curr_log_probs.append(dist.log_prob(acts))
 
                 # Calculate actor and critic losses.
-                #actor_loss = -np.mean(np.minimum(surr1, surr2))
+                ratios = np.exp(np.array(curr_log_probs, dtype=np.float32) - np.array(buffer_logprob, dtype=np.float32))
+                surr1 = ratios * np.array(A_k, dtype=np.float32)
+                surr2 = np.clip(ratios, 1 - clip, 1 + clip) * np.array(A_k, dtype=np.float32)
                 actor_loss = -tf.reduce_mean(tf.minimum(surr1, surr2))
 
             actor_grads = tape.gradient(actor_loss, self.actor.trainable_variables)
             self.actor.optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
-            tape.reset()
 
             print("Updated")
             print(self.actor.weights)
@@ -199,7 +198,9 @@ class estimator:
         V = []
         for obs in batch_obs:
             # get only the value from the critic
-            V.append(self.critic(obs)[0][0])
+            act = self.actor(obs)
+            critic = self.critic([obs, act])
+            V.append(critic[0][0])
         V = torch.tensor(np.asarray(V), dtype=torch.float)
         return V
     
@@ -209,13 +210,14 @@ class estimator:
         log_probs = []
         for obs, acts in zip(batch_obs, batch_acts):
             # get only the value from the critic
-            V.append(self.critic(obs)[0][0])
+            action = self.actor(obs)
+            V.append(self.critic(obs, action)[0][0])
 
 		    # Calculate the log probabilities of batch actions using most recent actor network.
 		    # This segment of code is similar to that in get_action()
-            mean = torch.tensor(np.asarray(self.actor(obs)), dtype=torch.float)
-            dist = MultivariateNormal(mean, self.cov_mat)
-            log_probs.append(dist.log_prob(torch.tensor(acts, dtype=torch.float)))
+            mean = np.asarray(action)
+            dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat_32)
+            log_probs.append(dist.log_prob(acts))
 
         V = torch.tensor(np.asarray(V), dtype=torch.float)
 
@@ -223,3 +225,4 @@ class estimator:
 		# Return the value vector V of each observation in the batch
 		# and log probabilities log_probs of each action in the batch
         return V, log_probs
+    
