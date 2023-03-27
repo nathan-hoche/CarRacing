@@ -112,6 +112,14 @@ class Buffer:
         self.buffer_logprob.append(log_prob)
         self.buffer_reward.append(reward)
         return
+    
+    def reset(self):
+        self.buffer_obs = []
+        self.buffer_action = []
+        self.buffer_logprob = []
+        self.buffer_reward = []
+        self.buffer_rtgs = []
+        return
 
 ############# UTILS ##############
 
@@ -163,7 +171,7 @@ class estimator:
         if check:
             return
         (buffer_obs, buffer_action, buffer_logprob, buffer_rtgs) = self.buffer.get_data()
-
+        print("shape of new datas == ", np.asarray(buffer_obs).shape)
         # Calculate advantage at k-th iteration
         V = self.evaluate(buffer_obs)
         A_k = buffer_rtgs - np.asarray(V)
@@ -179,6 +187,8 @@ class estimator:
         if score > self.bestScore:
             self.bestScore = score
             self.saveNetworks(score, brain)
+
+        self.buffer.reset()
         return self.getAllWeights()
     
     @tf.function
@@ -196,17 +206,19 @@ class estimator:
             surr1 = ratios * tf.cast(A_k, dtype=tf.float32)
             surr2 = tf.clip_by_value(ratios, 1 - clip, 1 + clip) * tf.cast(A_k, dtype=tf.float32)
             actor_loss = -tf.reduce_mean(tf.minimum(surr1, surr2))
+            tf.print("Actor loss:", actor_loss)
 
         # Compute gradients and update the actor weights
         grads = tape.gradient(actor_loss, self.actor.trainable_weights)
         self.actor.model.optimizer.apply_gradients(zip(grads, self.actor.trainable_weights))
+
 
     @tf.function
     def train_critic(self, buffer_obs, buffer_rtgs):
         with tf.GradientTape() as tape:
             V = self.evaluate(buffer_obs)
             critic_loss = tf.keras.losses.MeanSquaredError()(V, buffer_rtgs)
-
+            tf.print("Critic loss:", critic_loss)
         grads = tape.gradient(critic_loss, self.critic.trainable_weights)
         self.critic.model.optimizer.apply_gradients(zip(grads, self.critic.trainable_weights))
                                                  
