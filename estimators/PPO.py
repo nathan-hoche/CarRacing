@@ -249,7 +249,7 @@ class estimator:
                 continue
             res[layer.name] = {}
             # Get current layer weights
-            res[layer.name]["weights"] = layer.get_weights()
+            res[layer.name]["weights"] = layer.get_weights()[0]
             ## Get current layer biases
-            res[layer.name]["biases"] = layer.get_biases()
+            res[layer.name]["biases"] = layer.get_weights()[1]
         return res
