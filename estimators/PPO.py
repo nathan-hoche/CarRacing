@@ -7,7 +7,6 @@ import numpy as np
 import tensorflow as tf
 import keras
 import tensorflow_probability as tfp
-
 ############# HYPERPARAMETER #############
 
 lr = 3e-4
@@ -150,6 +149,7 @@ class estimator:
         self.critic = CriticModel(name=("critic" + "_" +  brain.name))
 
         # Initialize the covariance matrix used to query the actor for actions
+
         cov_var = np.full((3,), fill_value=0.5)
         cov_mat = np.diag(cov_var)
         self.cov_mat_32 = tf.cast(tf.constant(cov_mat), dtype=tf.float32)
@@ -162,7 +162,9 @@ class estimator:
         observation = clearObservation(observation)
 
         dist = tfp.distributions.MultivariateNormalFullCovariance(loc=action, covariance_matrix=self.cov_mat_32)
+        action = dist.sample()
         log_prob = dist.log_prob(action)
+
         # Track recent observation, reward, action, and action log probability
         self.buffer.store_data(observation, action, log_prob, reward)
         
@@ -176,11 +178,9 @@ class estimator:
         V = self.evaluate(buffer_obs)
         A_k = buffer_rtgs - np.asarray(V)
         A_k = (A_k - A_k.mean()) / (A_k.std() + 1e-10)
-
         for _ in range(n_updates_per_iteration): 
             # Update the actor
-            self.train_actor(buffer_obs, buffer_logprob, A_k)
-            
+            self.train_actor(buffer_obs, buffer_logprob, buffer_action, A_k)
             # Update the critic
             self.train_critic(buffer_obs, buffer_rtgs)
 
@@ -192,25 +192,26 @@ class estimator:
         return self.getAllWeights()
     
     @tf.function
-    def train_actor(self, buffer_obs, buffer_logprob, A_k):
+    def train_actor(self, buffer_obs, buffer_logprob, buffer_action, A_k):
         with tf.GradientTape() as tape:
             curr_log_probs = []
-            for obs in buffer_obs:
+            for obs, act in zip(buffer_obs, buffer_action):
                 # Calculate the log probabilities of batch actions using most recent actor network.
                 # This segment of code is similar to that in get_action()
                 mean = self.actor(obs)
                 dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat_32)
-                curr_log_probs.append(dist.log_prob(mean))
+                curr_log_probs.append(dist.log_prob(act))
 
             ratios = tf.exp(tf.cast(curr_log_probs, dtype=tf.float32) - tf.cast(buffer_logprob, dtype=tf.float32))
             surr1 = ratios * tf.cast(A_k, dtype=tf.float32)
             surr2 = tf.clip_by_value(ratios, 1 - clip, 1 + clip) * tf.cast(A_k, dtype=tf.float32)
             actor_loss = -tf.reduce_mean(tf.minimum(surr1, surr2))
-            tf.print("Actor loss:", actor_loss)
 
         # Compute gradients and update the actor weights
         grads = tape.gradient(actor_loss, self.actor.trainable_weights)
         self.actor.model.optimizer.apply_gradients(zip(grads, self.actor.trainable_weights))
+        tf.print("GOOD BOY ACTOR !")
+        
 
 
     @tf.function
@@ -218,9 +219,11 @@ class estimator:
         with tf.GradientTape() as tape:
             V = self.evaluate(buffer_obs)
             critic_loss = tf.keras.losses.MeanSquaredError()(V, buffer_rtgs)
-            tf.print("Critic loss:", critic_loss)
+
         grads = tape.gradient(critic_loss, self.critic.trainable_weights)
         self.critic.model.optimizer.apply_gradients(zip(grads, self.critic.trainable_weights))
+        tf.print("GOOD BOY CRITIC !")
+
                                                  
     def evaluate(self, batch_obs):
         # Query critic network for a value V for each batch_obs. Shape of V should be same as batch_rtgs
