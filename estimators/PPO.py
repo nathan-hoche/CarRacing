@@ -9,7 +9,7 @@ import keras
 import tensorflow_probability as tfp
 ############# HYPERPARAMETER #############
 
-lr = 3e-4
+lr = 0.002
 gamma = 0.95
 clip = 0.2
 n_updates_per_iteration = 5
@@ -26,13 +26,14 @@ class CriticModel(keras.Model):
         # Load critic model
         try: 
             self.model = keras.models.load_model(self.save_file)
+            print("Critic model loaded")
             return
         except:
             pass
 
         if model is not None:
             self.model = keras.models.clone_model(model)
-            self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr), loss="mse")
+            self.model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr), loss="mse")
             return 
         
         state_input = keras.Input(shape=(1, 96, 96))
@@ -65,7 +66,7 @@ class ActorModel(keras.Model):
 
         ## Load actor model
         try:
-            self.model = keras.models.load_model(self.saveFile)
+            self.model = keras.models.load_model(self.save_file)
             return
         except:
             pass
@@ -178,6 +179,7 @@ class estimator:
         V = self.evaluate(buffer_obs)
         A_k = buffer_rtgs - np.asarray(V)
         A_k = (A_k - A_k.mean()) / (A_k.std() + 1e-10)
+        
         for _ in range(n_updates_per_iteration): 
             # Update the actor
             self.train_actor(buffer_obs, buffer_logprob, buffer_action, A_k)
@@ -201,14 +203,18 @@ class estimator:
                 mean = self.actor(obs)
                 dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat_32)
                 curr_log_probs.append(dist.log_prob(act))
+                #tf.print("curr_log_probs == ", curr_log_probs)
 
             ratios = tf.exp(tf.cast(curr_log_probs, dtype=tf.float32) - tf.cast(buffer_logprob, dtype=tf.float32))
+            #tf.print("ratios == ", ratios)
             surr1 = ratios * tf.cast(A_k, dtype=tf.float32)
             surr2 = tf.clip_by_value(ratios, 1 - clip, 1 + clip) * tf.cast(A_k, dtype=tf.float32)
             actor_loss = -tf.reduce_mean(tf.minimum(surr1, surr2))
+            #tf.print("actor_loss == ", actor_loss)
 
         # Compute gradients and update the actor weights
         grads = tape.gradient(actor_loss, self.actor.trainable_weights)
+        #tf.print("grads == ", grads)
         self.actor.model.optimizer.apply_gradients(zip(grads, self.actor.trainable_weights))
         tf.print("GOOD BOY ACTOR !")
         
@@ -218,7 +224,9 @@ class estimator:
     def train_critic(self, buffer_obs, buffer_rtgs):
         with tf.GradientTape() as tape:
             V = self.evaluate(buffer_obs)
-            critic_loss = tf.keras.losses.MeanSquaredError()(V, buffer_rtgs)
+            V = tf.convert_to_tensor(V)
+            buffer_rtgs = tf.convert_to_tensor(buffer_rtgs)
+            critic_loss = tf.reduce_mean(tf.square(V - buffer_rtgs))
 
         grads = tape.gradient(critic_loss, self.critic.trainable_weights)
         self.critic.model.optimizer.apply_gradients(zip(grads, self.critic.trainable_weights))
