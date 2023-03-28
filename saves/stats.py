@@ -4,10 +4,12 @@ import os
 import sys
 
 class stats():
-    def __init__(self, nom:str, isRead:bool=False) -> None:
-        self.nom = nom
+    def __init__(self, name:str=None, isRead:bool=False) -> None:
         self.isRead = isRead
-        self.filename = "saves/" + self.nom + ".csv"
+        if name != None:
+            self.filename = "saves/" + name + ".csv"
+        else:
+            return
         self.df = None
         if self.isRead == True:
             self.df = pd.read_csv(self.filename, sep=";")
@@ -63,10 +65,94 @@ class stats():
                 fig.canvas.flush_events()
                 fig.canvas.draw()
             plt.pause(0.05)
+        
+    def AllMaxGenerations(self):
+        os.listdir("saves")
+        dfs = {}
+        for filename in os.listdir("saves"):
+            if filename.endswith(".csv"):
+                tab = {"Max score": []}
+                tabMax = -1
+                tmp = pd.read_csv("saves/" + filename, sep=";")
+                if "NEAT" in filename or "Genetic" in filename:
+                    tmp = tmp.groupby(tmp.index // 50).max()
+                for i in range(0, len(tmp["Max score"])):
+                    tabMax = max(tabMax, tmp["Max score"][i])
+                    tab["Max score"].append(tabMax)
+                    
+                dfs[filename[:-4]] = tab
+        for key, value in dfs.items():
+            plt.plot(value["Max score"], label=key)
+        plt.title("Max score")
+        plt.xlabel("Number of simulations")
+        plt.ylabel("Score")
+        plt.legend()
+        plt.show()
+       
+    def AllGenerations(self):
+        os.listdir("saves")
+        dfs = {}
+        for filename in os.listdir("saves"):
+            if filename.endswith(".csv"):
+                tmp = pd.read_csv("saves/" + filename, sep=";")
+                if "NEAT" in filename or "Genetic" in filename:
+                    tmp = tmp.groupby(tmp.index // 50).max()
+                dfs[filename[:-4]] = tmp
+        for key, value in dfs.items():
+            plt.plot(value["Max score"], label=key)
+        plt.title("Max score")
+        plt.xlabel("Number of simulations")
+        plt.ylabel("Score")
+        plt.legend()
+        plt.show()
+
+    def AllSimulations(self):
+        os.listdir("saves")
+        dfs = {}
+        for filename in os.listdir("saves"):
+            if filename.endswith(".csv"):
+                tmp = pd.read_csv("saves/" + filename, sep=";")
+                dfs[filename[:-4]] = tmp
+        for key, value in dfs.items():
+            plt.plot(value["Max score"], label=key)
+        plt.title("Max score")
+        plt.xlabel("Number of simulations")
+        plt.ylabel("Score")
+        plt.legend()
+        plt.show()
+
+    def AllMaxSimulations(self):
+        os.listdir("saves")
+        dfs = {}
+        for filename in os.listdir("saves"):
+            if filename.endswith(".csv"):
+                tab = {"Max score": []}
+                tabMax = -1
+                tmp = pd.read_csv("saves/" + filename, sep=";")
+                for i in range(0, len(tmp["Max score"])):
+                    tabMax = max(tabMax, tmp["Max score"][i])
+                    tab["Max score"].append(tabMax)
+                    
+                dfs[filename[:-4]] = tab
+        for key, value in dfs.items():
+            plt.plot(value["Max score"], label=key)
+        plt.title("Max score")
+        plt.xlabel("Number of simulations")
+        plt.ylabel("Score")
+        plt.legend()
+        plt.show()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("Usage: python stats.py <nom>")
         exit(1)
-    stats = stats(sys.argv[1], isRead=True)
-    stats.read()
+    elif sys.argv[1] == "ALL":
+        stats = stats(isRead=True)
+        Possibilities = {"MaxSimulation": stats.AllMaxSimulations, "MaxGeneration": stats.AllMaxGenerations, "Simulation": stats.AllSimulations, "Generation": stats.AllGenerations}
+        if len(sys.argv) < 3 or sys.argv[2] not in Possibilities:
+            print("Usage: python stats.py ALL <MaxSimulation/MaxGeneration/Simulation/Generation>")
+            exit(1)
+        Possibilities[sys.argv[2]]()
+    else:
+        stats = stats(sys.argv[1], isRead=True)
+        stats.read()
