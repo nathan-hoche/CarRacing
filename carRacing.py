@@ -8,9 +8,6 @@ from saves.stats import stats
 #from PIL import Image
 
 ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
-print("ENV obs must be 96 ==== ",ENV.observation_space.shape[0])
-
-print("ENV obs must be 3 ==== ",ENV.action_space.shape[0])
 
 # Actions: [steering, gas, brake] [{-1 ... 1}, {0 ... 1}, {0 ... 1}]
 # Observaton space: [[r, g, b] * 96] * 96] (RGB image)
