@@ -293,8 +293,8 @@ class estimator:
         self.currentSimulation += 1
 
         ## Save memory every 100 simulations
-        if self.currentSimulation % 100 == 0:
-            self.memory.saveMemory()
+        ## if self.currentSimulation % 100 == 0:
+        ##    self.memory.saveMemory()
 
         ## Save best network
         if score > self.bestScore:
