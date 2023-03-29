@@ -14,26 +14,36 @@ python carRacing.py MODEL_NAME ALGORITHM_NAME
 
 ## Run a trained model
 ```bash
-python visualize.py MODEL_NAME ALGORITHM_NAME
+python visualize.py <MODEL_NAME> <ALGORITHM_NAME>
 # or
-python visualize.py MODEL_NAME ALGORITHM_NAME SEED # to run a specific seed
+python visualize.py <MODEL_NAME> <ALGORITHM_NAME> <SEED> # to run a specific seed
 ```
 
-## View statistics
+## View statistics of a trained model
 ```bash
-python saves/stats.py CSV_FILE
+python saves/stats.py <CSV_FILE>
+```
+
+## View statistics of with a fiter
+```bash
+python saves/stats.py SPECIFIC <FILTER> <TYPE_OF_STATS>
+```
+
+## View statistics of all models
+```bash
+python saves/stats.py ALL <TYPE_OF_STATS>
 ```
 
 # Implemented Reinforcement algorithms
 | Algorithm | Description | File | Applicability | Implemented ? | Responsible |
 | --- | --- | --- | --- | --- | --- |
 | Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
-| Deep Q Neural Network (DQN) |  |DQN.py |✅ |🔧 | Nathan |
-| Neat Algorithm |  |NEAT.py  |✅ | 🚧 | Tom |
+| Deep Q Neural Network (DQN) |  |DQN.py |✅ | ✅ | Nathan |
+| Neat Algorithm |  |NEAT.py  |✅ | ✅ | Tom |
 | DDPG Algorithm |  |DDPG.py  |✅ |🔧 | Gabriel |
-| PPO Algorithm |  |PPO.py  |✅ |🔴 | Hugo |
+| PPO Algorithm |  |PPO.py  |✅ | 🚧 | Hugo |
 | Actor Critic Method |  |  |✅ |🔴 | Hugo |
-| VPG Algorithm |  |  |✅ |🔴 | Maxime |
+| VPG Algorithm |  |  |✅ | 🚧 | Maxime |
 | Q-learning or value-iteration methods |  |  |  |🔴 | |
 | Q-Learning |  |  |  | 🔴 | |
 
