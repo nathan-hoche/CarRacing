@@ -22,7 +22,7 @@ def GetMaxGeneration(filename:str) -> dict:
 
 def GetSimulations(filename:str) -> dict:
     tmp = pd.read_csv(filename, sep=";")
-    return tmp
+    return tmp[:2000]
 
 def GetMaxSimulations(filename:str) -> dict:
     tab = {"Max score": []}
@@ -31,6 +31,7 @@ def GetMaxSimulations(filename:str) -> dict:
     for i in range(0, len(tmp["Max score"])):
         tabMax = max(tabMax, tmp["Max score"][i])
         tab["Max score"].append(tabMax)
+    tab["Max score"] = tab["Max score"][:2000]
     return tab
 
 
