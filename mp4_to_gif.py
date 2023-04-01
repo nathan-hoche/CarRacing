@@ -15,6 +15,7 @@ def convert_mp4_to_gif(mp4_file, gif_file):
     writer.close()
 
 if __name__ == "__main__":
+    lastFolder = sys.argv[1].split("/")[-2]
     for file in os.listdir(sys.argv[1]):
         if file.endswith(".mp4"):
-            convert_mp4_to_gif(sys.argv[1] + file, "img/gif/" + file[:-4] + ".gif")
+            convert_mp4_to_gif(sys.argv[1] + file, "img/gif/" + lastFolder + ".gif")
