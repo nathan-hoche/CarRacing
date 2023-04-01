@@ -101,6 +101,8 @@ class stats():
                 fig.canvas.flush_events()
                 fig.canvas.draw()
             plt.pause(0.05)
+        fig.savefig("img/stats/" + self.filename[:-4].replace("saves/", "") + ".png")
+    
     
     def AllStats(self, type):
         Possibilities = {"MaxSimulation":GetMaxSimulations, "MaxGeneration":GetMaxGeneration, "Simulation":GetSimulations, "Generation":GetGeneration}
@@ -120,8 +122,9 @@ class stats():
         else:
             plt.xlabel("Number of generations")
         plt.ylabel("Score")
-        plt.legend()
-        plt.show()
+        fig = plt.gcf()
+        fig.set_size_inches(10, 10)
+        plt.legend(loc='upper left')
     
     def SpecficStats(self, type, stats):
         Possibilities = {"MaxSimulation":GetMaxSimulations, "MaxGeneration":GetMaxGeneration, "Simulation":GetSimulations, "Generation":GetGeneration}
@@ -142,8 +145,9 @@ class stats():
             plt.xlabel("Number of generations")
         plt.ylabel("Score")
         plt.legend()
-        plt.show()
 
+
+SAVE = True
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -156,12 +160,18 @@ if __name__ == "__main__":
             print("Usage: python stats.py ALL <MaxSimulation/MaxGeneration/Simulation/Generation>")
             exit(1)
         stats.AllStats(sys.argv[2])
+        plt.show()
+
     elif sys.argv[1] == "SPECIFIC":
         if len(sys.argv) < 4:
             print("Usage: python stats.py SPECIFIC <type> <MaxSimulation/MaxGeneration/Simulation/Generation>")
             exit(1)
         stats = stats(isRead=True)
         stats.SpecficStats(sys.argv[2], sys.argv[3])
+        if SAVE:
+            plt.savefig("img/stats/" + sys.argv[1] + "_" + sys.argv[2] + "_" + sys.argv[3] + ".png")
+        plt.show()
     else:
         stats = stats(sys.argv[1], isRead=True)
         stats.read()
+        plt.show()
