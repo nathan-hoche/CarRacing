@@ -139,7 +139,7 @@ class stats():
         for key, value in dfs.items():
             plt.plot(value["Max score"], label=key)
         plt.title("Max score")
-        if "Simulation" in type:
+        if "Simulation" in stats:
             plt.xlabel("Number of simulations")
         else:
             plt.xlabel("Number of generations")
