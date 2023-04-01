@@ -20,10 +20,12 @@ class estimator:
 
     def __init__(self) -> None:
 
-        self.name = "NEAT"
-        self.saveName = f"saves/{self.name}_{self.name}"
+        self.configName = 'estimators/ConfigNeat/NEATKNN'
+        # self.configName = 'estimators/ConfigNeat/NEATCNN'
+        self.name = self.configName.split('/')[-1]
+        self.saveName = f"saves/NEAT_{self.name}"
 
-        self.config: neat.Config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, 'estimators/Neat/configNEAT')
+        self.config: neat.Config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, self.configName)
         self.population: neat.Population = None
         self.saver: neat.Checkpointer = neat.Checkpointer(1, filename_prefix=self.saveName)
 
@@ -147,6 +149,7 @@ class estimator:
             os.system(f"rm {self.saveName}*")
             self.newGeneration(self.population)
             os.system(f"mv {self.saveName}* {self.saveName}")
+            print(f"Generation {self.generation} done")
         brain.__init__(self.name, list(iteritems(self.population.population))[self.currentGenomeIndex], self.config)
         return None
 

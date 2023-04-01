@@ -36,15 +36,17 @@ def dqnUpdate(brain, memory:list[dict], targetModel):
     clearFunc = brain.clearObservation if hasattr(brain, "clearObservation") else clearObservation
     shapeFunc = brain.reshapeObservation if hasattr(brain, "reshapeObservation") else (lambda x: (x, 1, 96, 96))
     for state, action, reward, next_state, done in minibatch:
+
         target = model.predict(clearFunc(state), verbose=False)[0]
-        if done:
-            target[action["index"]] = reward
-        else:
-            target[action["index"]] = reward + GAMMA * np.amax(targetModel.predict(clearFunc(next_state), verbose=False)[0])
-        # BE MORE COMPATIBLE WITH SOFTMAX
-        target[action["index"]] = 0 if target[action["index"]] < 0 else target[action["index"]]
-        target[action["index"]] = 1 if target[action["index"]] > 1 else target[action["index"]]
-        #################################
+        for x in range(0, len(action)):
+            if done[x]:
+                target[action[x]["index"]] = reward[x]
+            else:
+                target[action[x]["index"]] = reward[x] + GAMMA * np.amax(targetModel.predict(clearFunc(next_state[x]), verbose=False)[0])
+            # BE MORE COMPATIBLE WITH SOFTMAX
+            target[action[x]["index"]] = 0 if target[action[x]["index"]] < 0 else target[action[x]["index"]]
+            target[action[x]["index"]] = 1 if target[action[x]["index"]] > 1 else target[action[x]["index"]]
+            #################################
         train_state.append(clearFunc(state))
         train_target.append(target)
         sys.stdout.write("-")
@@ -84,7 +86,17 @@ class estimator:
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         if check:
             return
-        self.memory.append((observation, step, reward, nextObservation, self.memoryPos))
+        for x in range(0, len(self.memory)):
+            if self.memory[x][0].all() != observation.all():
+                if step in self.memory[x][1]:
+                    return
+                self.memory[x][1].append(step)
+                self.memory[x][2].append(reward)
+                self.memory[x][3].append(nextObservation)
+                self.memory[x][4].append(self.memoryPos)
+                self.memoryPos += 1
+                return
+        self.memory.append((observation, [step], [reward], [nextObservation], [self.memoryPos]))
         self.memoryPos += 1
     
     def setup(self, brain:object=None):
@@ -121,6 +133,4 @@ class estimator:
                 targetWeights[layer][key] = TAU * weights[layer][key] + (1 - TAU) * targetWeights[layer][key]
         self.target.train(targetWeights)
 
-        self.memory = []
-        self.memoryPos = 0
         return returnValue
