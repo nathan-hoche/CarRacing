@@ -20,7 +20,8 @@ class estimator:
 
     def __init__(self) -> None:
 
-        self.configName = 'estimators/ConfigNeat/NEATKNN'
+        self.configName = 'estimators/ConfigNeat/NEATKNNDEEP'
+        # self.configName = 'estimators/ConfigNeat/NEATKNN'
         # self.configName = 'estimators/ConfigNeat/NEATCNN'
         self.name = self.configName.split('/')[-1]
         self.saveName = f"saves/NEAT_{self.name}"
@@ -44,7 +45,7 @@ class estimator:
 
 
     def __str__(self) -> str:
-        return "NEAT"
+        return self.name
 
     def memorize(self, observation=None, step=None, reward=None, nextObservation=None, check=False):
         """Actualy no need to memorize

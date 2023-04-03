@@ -23,7 +23,7 @@ class brain:
 
 
     def __str__(self) -> str:
-        return "NeatBrain"
+        return "Neat"
 
     # def save(self, score):
     #     self.saver.save_checkpoint(config=self.config, population=self.population, species_set=self.population.species, generation=self.population.generation, filename=self.saveName)
@@ -32,10 +32,11 @@ class brain:
     def predict(self, observation = None, check=False):
         if check:
             return;
+        tmp = None
         if (self.network == None):
             print("[ERROR BRAIN] Network not load")
             return [[0, 0, 0]]
-        if self.estimatorName == "NEATKNN":
+        if self.estimatorName == "NEATKNN" or self.estimatorName == "NEATKNNDEEP":
             tmp = self.network.activate(clearObservation(observation).flatten())
         elif self.estimatorName == "NEATCNN":
             tmp = self.network.activate((np.dot(observation, [0.2989, 0.5870, 0.1140])).flatten())
