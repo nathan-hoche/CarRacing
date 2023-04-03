@@ -11,8 +11,8 @@ SAVE = True
 
 if SAVE:
     # FOR GENERATE VIDEO
-    from gym.utils.save_video import save_video
-    ENV = gym.make("CarRacing-v2", render_mode="rgb_array_list")
+    # from gym.utils.save_video import save_video
+    ENV = gym.make("CarRacing-v2", render_mode="rgb_array")
 else:
     ENV = gym.make("CarRacing-v2", render_mode="human")
 
@@ -57,7 +57,7 @@ def main(brain, estimatorName, seed=None):
     print("config: ", BRAIN, estimatorName + "\tseed:", seed)
 
     observation, info = ENV.reset(seed=seed)
-    
+
     score = 10
     MaxScore = 0
     allScore = []
@@ -90,8 +90,8 @@ def main(brain, estimatorName, seed=None):
         allScore.append(score)
         print("Score:", score)
     # FOR GENERATE VIDEO
-    if SAVE:
-        save_video(ENV.render(), "img/video/" + BRAIN.__str__() + '_' + estimatorName, fps=ENV.metadata["render_fps"])
+    # if SAVE:
+    #    save_video(ENV.render(), "img/video/" + BRAIN.__str__() + '_' + estimatorName, fps=ENV.metadata["render_fps"])
 
     print("=====================================> END OF SIMULATION")
     averageScore = sum(allScore) / len(allScore)
