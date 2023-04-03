@@ -1,7 +1,18 @@
 import neat
 import numpy as np
 from sklearn.cluster import KMeans
+from neat.six_util import itervalues, iteritems
+import gzip
+import pickle
+import random
 
+
+def restore_checkpoint(filename):
+        """Resumes the simulation from a previous saved point."""
+        with gzip.open(filename) as f:
+            generation, config, population, species_set, rndstate = pickle.load(f)
+            random.setstate(rndstate)
+            return (population, species_set, generation), config
 
 
 def clearObservation(observation):
@@ -45,4 +56,18 @@ class brain:
 
 
     def train(self, weights:dict=None, check=False):
-        pass
+        if check:
+
+            configName = 'estimators/ConfigNeat/NEATKNNDEEP'
+            # configName = 'estimators/ConfigNeat/NEATKNN'
+            # configName = 'estimators/ConfigNeat/NEATCNN'
+            name = configName.split('/')[-1]
+            saveName = f"saves/NEAT_{name}"
+
+            try:
+                init_stat, config = restore_checkpoint(saveName)
+                population = neat.Population(config, init_stat)
+            except Exception as e:
+                population = neat.Population(config)
+            self.__init__(name, list(iteritems(population.population))[0], config)
+            return;
