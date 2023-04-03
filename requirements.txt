@@ -3,3 +3,4 @@ keras
 gym >= 0.26.2
 neat-python
 scikit-learn >= 1.2.0
+moviepy

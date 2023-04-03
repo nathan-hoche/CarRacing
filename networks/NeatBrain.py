@@ -1,7 +1,18 @@
 import neat
 import numpy as np
 from sklearn.cluster import KMeans
+from neat.six_util import itervalues, iteritems
+import gzip
+import pickle
+import random
 
+
+def restore_checkpoint(filename):
+        """Resumes the simulation from a previous saved point."""
+        with gzip.open(filename) as f:
+            generation, config, population, species_set, rndstate = pickle.load(f)
+            random.setstate(rndstate)
+            return (population, species_set, generation), config
 
 
 def clearObservation(observation):
@@ -23,7 +34,7 @@ class brain:
 
 
     def __str__(self) -> str:
-        return "NeatBrain"
+        return "Neat"
 
     # def save(self, score):
     #     self.saver.save_checkpoint(config=self.config, population=self.population, species_set=self.population.species, generation=self.population.generation, filename=self.saveName)
@@ -32,10 +43,11 @@ class brain:
     def predict(self, observation = None, check=False):
         if check:
             return;
+        tmp = None
         if (self.network == None):
             print("[ERROR BRAIN] Network not load")
             return [[0, 0, 0]]
-        if self.estimatorName == "NEATKNN":
+        if self.estimatorName == "NEATKNN" or self.estimatorName == "NEATKNNDEEP":
             tmp = self.network.activate(clearObservation(observation).flatten())
         elif self.estimatorName == "NEATCNN":
             tmp = self.network.activate((np.dot(observation, [0.2989, 0.5870, 0.1140])).flatten())
@@ -44,4 +56,18 @@ class brain:
 
 
     def train(self, weights:dict=None, check=False):
-        pass
+        if check:
+
+            configName = 'estimators/ConfigNeat/NEATKNNDEEP'
+            # configName = 'estimators/ConfigNeat/NEATKNN'
+            # configName = 'estimators/ConfigNeat/NEATCNN'
+            name = configName.split('/')[-1]
+            saveName = f"saves/NEAT_{name}"
+
+            try:
+                init_stat, config = restore_checkpoint(saveName)
+                population = neat.Population(config, init_stat)
+            except Exception as e:
+                population = neat.Population(config)
+            self.__init__(name, list(iteritems(population.population))[0], config)
+            return;
