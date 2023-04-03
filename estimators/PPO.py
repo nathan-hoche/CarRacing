@@ -1,12 +1,8 @@
-#from stable_baselines3 import PPO      #PPO -> Proximal Policy Optimization
-#from stable_baselines3.common.vec_env import DummyVecEnv 
-#from stable_baselines3.common.evaluation import evaluate_policy  #to evaluate the model 
-#from stable_baselines3.common.callbacks import EvalCallback
-
 import numpy as np
 import tensorflow as tf
 import keras
 import tensorflow_probability as tfp
+
 ############# HYPERPARAMETER #############
 
 lr = 0.002
@@ -17,7 +13,7 @@ n_updates_per_iteration = 5
 ############# CLASS MODEL #############
 
 class CriticModel(keras.Model):
-    def __init__(self, model=None, name="critic", save_dir='saves/PPO'):
+    def __init__(self, model, name="critic", save_dir='saves/PPO'):
         super(CriticModel, self).__init__(name=name)
 
         self.save_dir = save_dir
@@ -31,31 +27,19 @@ class CriticModel(keras.Model):
         except:
             pass
 
-        if model is not None:
-            self.model = keras.models.clone_model(model)
-            self.model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr), loss="mse")
-            return 
+        self.model = keras.Sequential()
+
+        # Copy the brain model, I change the last layer to get only one output (critic value)
+        for layer in model.layers:
+            if layer == model.layers[-1]:
+                self.model.add(keras.layers.Dense(1, activation='relu'))
+            else:
+                self.model.add(layer)
         
-        state_input = keras.Input(shape=(1, 96, 96))
-        action_input = keras.Input(shape=(3))
-
-        state_input = keras.layers.Input(shape=(1, 96, 96), name='state')
-        action_input = keras.layers.Input(shape=(3), name='action')
-
-        flatten = keras.layers.Flatten()
-        concat = keras.layers.Concatenate()
-
-        dense1 = keras.layers.Dense(256, activation='relu')
-        dense2 = keras.layers.Dense(128, activation='relu')
-        dense3 = keras.layers.Dense(64, activation='relu')
-        q_value_output = keras.layers.Dense(1, activation=None, name='q_value')
-
-        self.model = keras.Model(inputs=[state_input, action_input], outputs=q_value_output(dense3(dense2(dense1(concat([flatten(state_input), action_input]))))))
         self.model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr), loss="mse")
     
-    def call(self, state, action):
-        q_value = self.model([state, action], training=True)
-        return q_value
+    def call(self, state):
+        return self.model(state, training=True)
 
 class ActorModel(keras.Model):
     def __init__(self, model, name="actor", save_dir='saves/PPO'):
@@ -84,43 +68,44 @@ class ActorModel(keras.Model):
 class Buffer:
     def __init__(self):
         self.buffer_obs = []
-        self.buffer_action = []
+        self.buffer_act = []
         self.buffer_logprob = []
-        self.buffer_reward = []
-        self.buffer_rtgs = []
+        self.buffer_rew = []
+        self.buffer_rtg = []
         return 
-
-    def compute_rtgs(self, buffer_reward):
-        buffer_rtgs = []
-        discounted_reward = 0 # The discounted reward so far
-
-        # Iterate through all rewards in the episode. We go backwards for smoother calculation of each
-        # discounted return (think about why it would be harder starting from the beginning)
-        for rew in reversed(buffer_reward):
-            discounted_reward = rew + discounted_reward * gamma
-            buffer_rtgs.insert(0, discounted_reward)
-		# Convert the rewards-to-go into a tensor
-        return buffer_rtgs
     
-    def get_data(self):
-        self.buffer_rtgs = self.compute_rtgs(self.buffer_reward)   
-        return (self.buffer_obs, self.buffer_action, self.buffer_logprob, self.buffer_rtgs)
-    
-    def store_data(self, observation, action, log_prob, reward):
+    def store_data(self, observation, reward):
         self.buffer_obs.append(observation)
-        self.buffer_action.append(action)
-        self.buffer_logprob.append(log_prob)
-        self.buffer_reward.append(reward)
+        self.buffer_rew.append(reward)
         return
+    
+    def store_action(self, action, logprob):
+        self.buffer_act.append(action)
+        self.buffer_logprob.append(logprob)
+        return
+    
+    def reshape_data(self):
+        self.buffer_logprob = tf.cast(self.buffer_logprob, dtype=tf.float32)
+        self.buffer_rtg = self.compute_rtgs()
+        return self.buffer_obs, self.buffer_act, self.buffer_logprob, self.buffer_rtg
+    
+    def compute_rtgs(self):
+        batch_rtgs = []
+        discounted_reward = 0 
+        for rew in reversed(self.buffer_rew):
+            discounted_reward = rew + discounted_reward * gamma
+            batch_rtgs.insert(0, discounted_reward)
+        return batch_rtgs
     
     def reset(self):
         self.buffer_obs = []
-        self.buffer_action = []
+        self.buffer_act = []
         self.buffer_logprob = []
-        self.buffer_reward = []
-        self.buffer_rtgs = []
+        self.buffer_rew = []
+        self.buffer_rtg = []
         return
-
+    
+    
 ############# UTILS ##############
 
 def clearObservation(observation):
@@ -145,103 +130,123 @@ class estimator:
 
     def setup(self, brain: object):
         self.buffer = Buffer()
-
         self.actor = ActorModel(model=brain.model, name=("actor" + "_" + brain.name))
-        self.critic = CriticModel(name=("critic" + "_" +  brain.name))
+        self.critic = CriticModel(model=brain.model, name=("critic" + "_" +  brain.name))
 
-        # Initialize the covariance matrix used to query the actor for actions
-
-        cov_var = np.full((3,), fill_value=0.5)
-        cov_mat = np.diag(cov_var)
-        self.cov_mat_32 = tf.cast(tf.constant(cov_mat), dtype=tf.float32)
+        # Initialize the covariance matrix to create an action for the environment
+        self.cov_var = tf.fill(dims=(3,), value=0.5)
+        self.cov_mat = tf.linalg.diag(self.cov_var)
         return
 
+    def sample(self, mean):
+        action, logprob = self.getAction(mean)
+        self.buffer.store_action(action, logprob)
+        return action
 
+    def getAction(self, mean):
+        # mean represent the action from the actor network
+
+        # Create a distribution with the mean and the covariance matrix
+        dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat)
+
+        # Sample an action with the distribution created
+        action = dist.sample()
+
+        # Get the log probability of the action
+        log_prob = dist.log_prob(action)
+
+        return action.numpy(), log_prob
+
+    
     def memorize(self, observation=None, action=None, reward=None, nextObservation=None, check=False):
         if check:
             return
-        observation = clearObservation(observation)
-
-        dist = tfp.distributions.MultivariateNormalFullCovariance(loc=action, covariance_matrix=self.cov_mat_32)
-        action = dist.sample()
-        log_prob = dist.log_prob(action)
-
-        # Track recent observation, reward, action, and action log probability
-        self.buffer.store_data(observation, action, log_prob, reward)
         
+        # Clear observation gives us the shape (1, 1, 96, 96)
+        observation = clearObservation(observation)
+        action, log_prob = self.getAction(action)
+
+        # Store the data in the buffer
+        self.buffer.store_data(observation, action, log_prob, reward)
+
+    def evaluate(self, buffer_obs):
+        # Query critic network for a crtici value V for each observation in buffer_obs.
+        V = []
+        for obs in buffer_obs:
+            V.append(self.critic(obs))
+        return V
 
     def update(self, brain:object=None, score=None, model=None, check=False):
         if check:
             return
-        (buffer_obs, buffer_action, buffer_logprob, buffer_rtgs) = self.buffer.get_data()
-        print("shape of new datas == ", np.asarray(buffer_obs).shape)
-        # Calculate advantage at k-th iteration
-        V = self.evaluate(buffer_obs)
-        A_k = buffer_rtgs - np.asarray(V)
-        A_k = (A_k - A_k.mean()) / (A_k.std() + 1e-10)
-        
-        for _ in range(n_updates_per_iteration): 
-            # Update the actor
-            self.train_actor(buffer_obs, buffer_logprob, buffer_action, A_k)
-            # Update the critic
-            self.train_critic(buffer_obs, buffer_rtgs)
+        (buffer_obs, buffer_act, buffer_logprob, buffer_rtg) = self.buffer.reshape_data()
+        V = np.asarray(self.evaluate(buffer_obs))
 
+        # Calculate advantage at t time 
+        A_t = buffer_rtg - V
+
+        # Normalize advantage
+        A_t = (A_t - A_t.mean()) / (A_t.std() + 1e-10)
+
+        # Train actor and critic networks
+        for _ in range(n_updates_per_iteration): 
+            self.train_actor(buffer_obs, buffer_act, buffer_logprob, A_t)
+            self.train_critic(buffer_obs, buffer_rtg)
+
+        # Save the best model
         if score > self.bestScore:
             self.bestScore = score
             self.saveNetworks(score, brain)
 
+        # Reset the buffer
         self.buffer.reset()
         return self.getAllWeights()
     
     @tf.function
-    def train_actor(self, buffer_obs, buffer_logprob, buffer_action, A_k):
+    def train_actor(self, buffer_obs, buffer_act, buffer_logprob, A_t):
         with tf.GradientTape() as tape:
+            # Calculate the log probability of the action updated
             curr_log_probs = []
-            for obs, act in zip(buffer_obs, buffer_action):
-                # Calculate the log probabilities of batch actions using most recent actor network.
-                # This segment of code is similar to that in get_action()
+            for obs, act in zip(buffer_obs, buffer_act):
                 mean = self.actor(obs)
-                dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat_32)
+                dist = tfp.distributions.MultivariateNormalFullCovariance(loc=mean, covariance_matrix=self.cov_mat)
                 curr_log_probs.append(dist.log_prob(act))
-                #tf.print("curr_log_probs == ", curr_log_probs)
 
-            ratios = tf.exp(tf.cast(curr_log_probs, dtype=tf.float32) - tf.cast(buffer_logprob, dtype=tf.float32))
-            #tf.print("ratios == ", ratios)
-            surr1 = ratios * tf.cast(A_k, dtype=tf.float32)
-            surr2 = tf.clip_by_value(ratios, 1 - clip, 1 + clip) * tf.cast(A_k, dtype=tf.float32)
+            # Calculate the ratio of the new log probability and the old log probability 
+            # It represent pi_theta(a_t|s_t) / pi_theta_old(a_t|s_t)
+            ratios = tf.exp(tf.cast(curr_log_probs, dtype=tf.float32) - buffer_logprob)
+
+            # Calculate the unclipped ratio
+            surr1 = ratios * tf.cast(A_t, dtype=tf.float32)
+
+            # Calculate the clipped ratio
+            surr2 = tf.clip_by_value(ratios, 1 - clip, 1 + clip) * tf.cast(A_t, dtype=tf.float32)
+
+            # Calculate the loss by taking the minimum of the two ratios
             actor_loss = -tf.reduce_mean(tf.minimum(surr1, surr2))
-            #tf.print("actor_loss == ", actor_loss)
+            tf.print("ACTOR LOSS : ", actor_loss)
 
-        # Compute gradients and update the actor weights
+        # Calculate the gradient of the loss to the actor network
         grads = tape.gradient(actor_loss, self.actor.trainable_weights)
-        #tf.print("grads == ", grads)
+        # Apply the gradient to the actor network
         self.actor.model.optimizer.apply_gradients(zip(grads, self.actor.trainable_weights))
         tf.print("GOOD BOY ACTOR !")
-        
-
 
     @tf.function
-    def train_critic(self, buffer_obs, buffer_rtgs):
+    def train_critic(self, buffer_obs, buffer_rtg):
         with tf.GradientTape() as tape:
-            V = self.evaluate(buffer_obs)
-            V = tf.convert_to_tensor(V)
-            buffer_rtgs = tf.convert_to_tensor(buffer_rtgs)
-            critic_loss = tf.reduce_mean(tf.square(V - buffer_rtgs))
+            # calculate V_phi with the updated critic network
+            V = tf.convert_to_tensor(self.evaluate(buffer_obs))
 
+            # Calculate the loss of the critic network
+            critic_loss = tf.reduce_mean(tf.square(V - tf.convert_to_tensor(buffer_rtg)))
+
+        # Calculate the gradient of the loss to the critic network
         grads = tape.gradient(critic_loss, self.critic.trainable_weights)
+        
+        # Apply the gradient to the critic network
         self.critic.model.optimizer.apply_gradients(zip(grads, self.critic.trainable_weights))
         tf.print("GOOD BOY CRITIC !")
-
-                                                 
-    def evaluate(self, batch_obs):
-        # Query critic network for a value V for each batch_obs. Shape of V should be same as batch_rtgs
-        V = []
-        for obs in batch_obs:
-            # get only the value from the critic
-            act = self.actor(obs)
-            critic = self.critic(obs, act)
-            V.append(critic[0][0])
-        return V
     
     def saveNetworks(self, score, brain: object):
         self.actor.model.save(self.actor.save_file)
