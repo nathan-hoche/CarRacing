@@ -22,8 +22,8 @@ During our study year at University of Kent, we had to produce a project in a gr
 > ✅ : Implemented
 
 # Implemented models
-| Model | Description | File | Implemented ? | Responsible | Scheme |
-| --- | --- | --- | --- | --- | --- |
+| Model | Description | File | Implemented ? | Responsible |
+| --- | --- | --- | --- | --- |
 | CNN | Classic CNN where outputs are the value of simulation parameters |CNN.py |✅ | Nathan |
 | Fully Connected | Only Dense layers where outputs are the value of simulation parameters  |FullyConnected.py |✅ | Gabriel |
 | Selective CNN | CNN where the outputs are which move done (move predifined) |SelectiveCNN.py |✅ | Nathan |
