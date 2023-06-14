@@ -1,4 +1,49 @@
-# General Information
+# Car Racing - Reinforcement Learning
+
+# Introduction
+
+During our study year at University of Kent, we had to produce a project in a group of 4 peoples. We decided to work on a Reinforcement Learning project. The goal was to train a car to drive on a track using Reinforcement Learning algorithms. We had to implement the algorithms and the models from scratch. We also had to implement a way to visualize the training and the results of the training.
+
+# Implemented Reinforcement algorithms
+| Algorithm | Description | File | Applicability | Implemented ? | Responsible |
+| --- | --- | --- | --- | --- | --- |
+| Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
+| Deep Q Neural Network (DQN) |  |DQN.py |✅ | ✅ | Nathan |
+| Neat Algorithm |  |NEAT.py  |✅ | ✅ | Tom |
+| DDPG Algorithm |  |DDPG.py  |✅ |🔧 | Gabriel |
+| PPO Algorithm |  |PPO.py  |✅ | 🚧 | Hugo |
+| Actor Critic Method |  |  |✅ |🔴 | Hugo |
+| VPG Algorithm |  |  |✅ | 🚧 | Maxime |
+| Q-learning or value-iteration methods |  |  |  |🔴 | |
+| Q-Learning |  |  |  | 🔴 | |
+
+> 🔴 : Not implemented<br>
+> 🚧 : In progress<br>
+> ✅ : Implemented
+
+# Implemented models
+| Model | Description | File | Implemented ? | Responsible | Scheme |
+| --- | --- | --- | --- | --- | --- |
+| CNN | Classic CNN where outputs are the value of simulation parameters |CNN.py |✅ | Nathan |
+| Fully Connected | Only Dense layers where outputs are the value of simulation parameters  |FullyConnected.py |✅ | Gabriel |
+| Selective CNN | CNN where the outputs are which move done (move predifined) |SelectiveCNN.py |✅ | Nathan |
+| Selective Fully Connected + Kmeans | Only Dense layers where the outputs are which move done (move predifined), but the input isn't the image but a single line of majoritary class selected by the Kmeans |SelectiveKMNN.py |✅ | Nathan |
+
+## Scheme of the models
+
+| CNN | Fully Connected | Selective CNN | Selective Fully Connected + Kmeans |
+|-----|-----------------|---------------|------------------------------------|
+|<img src="img/CNN.png"/> | <img src="img/FullyConnected.png"/> | <img src="img/SelectiveCNN.png"/> | <img src="img/SelectiveKMNN.png"/> |
+
+
+
+# Results
+
+| Genetic Algorithm + FullyConnected | DQN + SelectiveKMNN| NEAT | DDPG + CNN |
+|-------------------|-----|------|------|
+|<img src="img/gif/FullyConnected_Genetic.gif"/> | <img src="img/gif/SelectiveKMNN_DQN.gif"/> | <img src="img/gif/Neat_NEAT.gif"/> | <img src="img/gif/CNN_DDPG.gif"/> |
+
+
 
 # Usage
 
@@ -34,32 +79,6 @@ python saves/stats.py SPECIFIC <FILTER> <TYPE_OF_STATS>
 python saves/stats.py ALL <TYPE_OF_STATS>
 ```
 
-# Implemented Reinforcement algorithms
-| Algorithm | Description | File | Applicability | Implemented ? | Responsible |
-| --- | --- | --- | --- | --- | --- |
-| Classic Genetic Algorithm |  |Genetic.py |✅ | ✅ | Gabriel |
-| Deep Q Neural Network (DQN) |  |DQN.py |✅ | ✅ | Nathan |
-| Neat Algorithm |  |NEAT.py  |✅ | ✅ | Tom |
-| DDPG Algorithm |  |DDPG.py  |✅ |🔧 | Gabriel |
-| PPO Algorithm |  |PPO.py  |✅ | 🚧 | Hugo |
-| Actor Critic Method |  |  |✅ |🔴 | Hugo |
-| VPG Algorithm |  |  |✅ | 🚧 | Maxime |
-| Q-learning or value-iteration methods |  |  |  |🔴 | |
-| Q-Learning |  |  |  | 🔴 | |
-
-> https://en.wikipedia.org/wiki/Reinforcement_learning
-> https://smartlabai.medium.com/reinforcement-learning-algorithms-an-intuitive-overview-904e2dff5bbc
-> https://towardsdatascience.com/introduction-to-various-reinforcement-learning-algorithms-i-q-learning-sarsa-dqn-ddpg-72a5e0cb6287
-> https://medium.datadriveninvestor.com/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1
-
-# Implemented models
-| Model | Description | File | Implemented ? | Responsible |
-| --- | --- | --- | --- | --- |
-| CNN |  |CNN.py |✅ | Nathan |
-| Fully Connected |  |FullyConnected.py |✅ | Gabriel |
-| Selective CNN |  |SelectiveCNN.py |✅ | Nathan |
-| Selective Fully Connected + Kmeans | |SelectiveKMNN.py |✅ | Nathan |
-
 # Code architecture
 ```mermaid
 flowchart TD
@@ -83,7 +102,7 @@ flowchart TD
     R --> E
 ```
 
-# Research Papers
+<!-- # Research Papers
 | Algorithm | Paper |
 | --- | --- |
 | Deep Q Neural Network (DQN) | https://medium.com/@cyberlympha/recurrent-neural-networks-in-reinforcement-learning-11600819ede4 |
@@ -96,4 +115,4 @@ flowchart TD
 | Deep Q Neural Network (DQN) | https://huggingface.co/blog/deep-rl-dqn |
 | Deep Q Neural Network (DQN) | https://huggingface.co/deep-rl-course/unit3/introduction |
 | Deep Q Neural Network (DQN) | https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_atari.py |
-| Deep Q Neural Network (DQN) | https://github.com/pekaalto/DQN |
+| Deep Q Neural Network (DQN) | https://github.com/pekaalto/DQN | -->
